@@ -39,14 +39,32 @@
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
             
-            <!-- Step 1: Enter MAC Address -->
+            <!-- Step 1: Scan QR or Enter MAC -->
             <div id="claim-step-1">
                 <h2>Claim New Device</h2>
-                <p>Enter the unique MAC Address found on your device's QR code.</p>
-                <form id="start-claim-form">
-                    <input type="text" id="device-id-input" placeholder="MAC Address (e.g., A1:B2:C3:D4:E5:F6)" required>
-                    <button type="submit" class="modal-button">Get Claim Code</button>
-                </form>
+                <p>Scan the QR code on your device or enter the MAC address manually.</p>
+                <div class="claim-options">
+                    <button id="scan-qr-btn" class="modal-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+                        Scan QR Code
+                    </button>
+                    <p class="or-divider">OR</p>
+                    <form id="start-claim-form">
+                        <input type="text" id="device-id-input" placeholder="Enter MAC Address Manually" required>
+                        <button type="submit" class="modal-button secondary">Get Claim Code</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- QR Scanner View -->
+            <div id="qr-scanner-view" style="display: none;">
+                 <h2>Scan QR Code</h2>
+                 <div class="video-container">
+                    <video id="qr-video"></video>
+                    <div class="scanner-overlay"></div>
+                 </div>
+                 <p id="qr-scan-feedback">Point your camera at the QR code</p>
+                 <button id="cancel-scan-btn" class="modal-button secondary">Cancel</button>
             </div>
 
             <!-- Step 2: Display Claim Code & Instructions -->
@@ -79,6 +97,8 @@
         </div>
     </div>
 
+    <!-- QR Code Scanner Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="dashboard.js" type="module"></script>
 </body>
 </html>
