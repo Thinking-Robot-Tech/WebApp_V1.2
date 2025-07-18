@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PICO IOT - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <h1 class="app-title">My Devices</h1>
+            <div class="header-actions">
+                <span id="user-email" class="user-email-display"></span>
+                <button id="logout-btn" class="logout-button">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div id="device-list-container">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading your devices...</p>
+            </div>
+        </div>
+    </main>
+
+    <button id="add-device-btn" class="fab" aria-label="Add New Device">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+
+    <!-- "Add Device" Modal with multiple steps -->
+    <div id="add-device-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" aria-label="Close">&times;</button>
+            
+            <!-- Step 1: Enter MAC Address -->
+            <div id="claim-step-1">
+                <h2>Claim New Device</h2>
+                <p>Enter the unique MAC Address found on your device's QR code.</p>
+                <form id="start-claim-form">
+                    <input type="text" id="device-id-input" placeholder="MAC Address (e.g., A1:B2:C3:D4:E5:F6)" required>
+                    <button type="submit" class="modal-button">Get Claim Code</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Display Claim Code & Instructions -->
+            <div id="claim-step-2" style="display: none;">
+                <h2>Follow these steps</h2>
+                <ol class="instructions-list">
+                    <li>Power on your PICO device.</li>
+                    <li>On your phone, go to Wi-Fi settings and connect to the network named <strong id="device-hotspot-name">PICO-Setup-XXXX</strong>.</li>
+                    <li>A configuration page should open automatically. If not, open a browser and go to <strong>192.168.4.1</strong>.</li>
+                    <li>Enter the claim code below when prompted.</li>
+                </ol>
+                <div class="claim-code-container">
+                    <span id="claim-code-display">----</span>
+                    <button id="copy-code-btn" class="copy-button">Copy</button>
+                </div>
+                <p class="waiting-text">Waiting for device to connect...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal for Deleting -->
+    <div id="confirm-delete-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirm Deletion</h2>
+            <p id="confirm-delete-text">Are you sure you want to delete this device? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn" class="modal-button secondary">Cancel</button>
+                <button id="confirm-delete-btn" class="modal-button danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js" type="module"></script>
+</body>
+</html>
