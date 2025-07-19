@@ -211,6 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
             qrVideo.srcObject = videoStream;
             await qrVideo.play();
             goToStep('qr');
+            // **FIX**: Start the scanning loop after the video starts playing.
+            scanFrame(); 
         } catch (err) {
             console.error("Error accessing camera: ", err);
             alert("Could not access camera. Please ensure you've given permission.");
@@ -241,9 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 claimProcessData.macAddress = code.data;
                 claimProcessData.isVirtual = false;
                 goToStep(2);
-                return;
+                return; // Stop the loop once a code is found
             }
         }
+        // Continue the loop if no code is found
         qrScanner = requestAnimationFrame(scanFrame);
     };
 
