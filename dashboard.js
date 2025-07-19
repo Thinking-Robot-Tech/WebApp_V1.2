@@ -172,6 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- Add Device Flow ---
     const startQrScanner = async () => {
+        // **FIX**: Check for secure context before trying to access the camera.
+        if (!window.isSecureContext) {
+            alert("Camera access is only available on secure (https) pages or localhost.");
+            return;
+        }
         if (!qrVideo) return;
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -183,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         } catch (err) {
             console.error("Error accessing camera: ", err);
-            alert("Could not access camera. Please ensure you've given permission.");
+            alert("Could not access camera. Please ensure you've given permission and are not blocking it.");
             resetAddDeviceModal();
         }
     };
@@ -236,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stepNumber === 3 && claimStep3) claimStep3.style.display = 'block';
     };
 
-    // **FIX**: Added the missing generateClaimCode function
     const generateClaimCode = () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let result = '';
