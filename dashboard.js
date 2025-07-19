@@ -172,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- Add Device Flow ---
     const startQrScanner = async () => {
-        // **FIX**: Check for secure context before trying to access the camera.
         if (!window.isSecureContext) {
             alert("Camera access is only available on secure (https) pages or localhost.");
             return;
@@ -181,11 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             qrVideo.srcObject = videoStream;
-            qrVideo.oncanplay = () => {
-                if(claimStep1) claimStep1.style.display = 'none';
-                if(qrScannerView) qrScannerView.style.display = 'block';
-                scanFrame();
-            };
+            
+            // **FIX**: Use qrVideo.play() which is more reliable than oncanplay.
+            await qrVideo.play();
+            
+            if(claimStep1) claimStep1.style.display = 'none';
+            if(qrScannerView) qrScannerView.style.display = 'block';
+            scanFrame();
+
         } catch (err) {
             console.error("Error accessing camera: ", err);
             alert("Could not access camera. Please ensure you've given permission and are not blocking it.");

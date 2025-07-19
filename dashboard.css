@@ -98,6 +98,22 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .copy-button { background-color: var(--border-color); color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
 .waiting-text { font-size: 14px; color: var(--text-secondary); text-align: center; }
 
+.virtual-device-link-container {
+    text-align: center;
+    margin-top: 24px;
+}
+.virtual-device-link {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.virtual-device-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
 /* --- Toggle Switch --- */
 .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
 .switch input { opacity: 0; width: 0; height: 0; }

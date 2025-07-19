@@ -64,15 +64,16 @@
                         <button type="submit" class="modal-button secondary">Continue</button>
                     </form>
                 </div>
-                 <div class="or-divider">OR</div>
-                <button id="add-virtual-device-btn" class="modal-button secondary">Add a Virtual Device (for testing)</button>
+                <!-- FIX: Changed the virtual device button to a small text link -->
+                <div class="virtual-device-link-container">
+                    <span id="add-virtual-device-btn" class="virtual-device-link">Add a virtual device for testing</span>
+                </div>
             </div>
 
             <!-- QR Scanner View -->
             <div id="qr-scanner-view" class="modal-step" style="display: none;">
                  <h2>Scan QR Code</h2>
                  <div class="video-container">
-                    <!-- FIX: Added the 'playsinline' attribute to the video tag -->
                     <video id="qr-video" playsinline></video>
                     <div class="scanner-overlay"></div>
                  </div>
