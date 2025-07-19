@@ -6,6 +6,7 @@ import {
     signInWithEmailAndPassword,
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- Firebase Configuration ---
 const firebaseConfig = {
@@ -21,9 +22,8 @@ const firebaseConfig = {
 // --- Initialize Firebase ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-// **FIX:** Wrap all DOM interaction code in a DOMContentLoaded event listener.
-// This ensures the script doesn't run until the entire HTML page is loaded.
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM Element References ---
@@ -36,14 +36,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions ---
 
+    /**
+     * Handles user signup. Captures name and creates a user
+     * document in Firestore alongside the auth user.
+     * @param {Event} e The form submission event.
+     */
     const handleSignup = (e) => {
         e.preventDefault();
+        const name = document.getElementById('signup-name').value.trim();
         const email = document.getElementById('signup-email').value;
         const password = document.getElementById('signup-password').value;
 
+        if (!name) {
+            alert('Please enter your name.');
+            return;
+        }
+
         createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                console.log('User signed up successfully:', userCredential.user);
+            .then(async (userCredential) => {
+                const user = userCredential.user;
+                console.log('User signed up successfully:', user.uid);
+
+                // Create the user document in the 'users' collection
+                const userDocRef = doc(db, "users", user.uid);
+                await setDoc(userDocRef, {
+                    name: name, // Save the user's name
+                    email: user.email,
+                    rooms: ["Living Room", "Bedroom", "Kitchen"], // Initialize with default rooms
+                    createdAt: serverTimestamp()
+                });
+
+                console.log('User document created in Firestore.');
                 window.location.href = 'dashboard.html'; 
             })
             .catch((error) => {
@@ -86,12 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Auth State Observer ---
-// This part can stay outside because it doesn't interact with the DOM immediately.
-// It just listens for auth changes.
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        console.log('User is already logged in. Redirecting...');
-        if (!window.location.pathname.includes('dashboard.html')) {
+        if (!window.location.pathname.includes('dashboard.html') && !window.location.pathname.includes('form.html')) {
+            console.log('User is already logged in. Redirecting to dashboard...');
             window.location.href = 'dashboard.html';
         }
     }

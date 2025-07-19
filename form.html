@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PICO IOT - Device Configuration</title>
+    <link rel="stylesheet" href="form.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+</head>
+<body>
+    <div class="background-shapes"></div>
+    <div class="config-container">
+        <div class="config-card">
+            <div class="card-header">
+                <svg class="logo" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.27 6.96 8.73 5.05 8.73-5.05"/><path d="m12 22.08V12"/></svg>
+                <h1>Device Setup</h1>
+            </div>
+
+            <!-- Configuration Form -->
+            <div id="config-form-view">
+                <h2>Configure your PICO Device</h2>
+                <form id="device-config-form">
+                    <!-- The "Device Name" input has been removed -->
+                    <div class="input-group">
+                        <label for="claim-code">Claim Code</label>
+                        <input type="text" id="claim-code" placeholder="Enter the code from the app" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="wifi-ssid">Wi-Fi Network (SSID)</label>
+                        <input type="text" id="wifi-ssid" placeholder="Your Home Wi-Fi Name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="wifi-password">Wi-Fi Password</label>
+                        <input type="password" id="wifi-password" placeholder="Your Wi-Fi Password">
+                    </div>
+                    <button type="submit" id="submit-btn">Connect and Claim</button>
+                </form>
+            </div>
+            
+            <!-- Loading/Status View -->
+            <div id="status-view" style="display: none;">
+                <div class="spinner"></div>
+                <p id="status-text">Connecting to network and claiming device...</p>
+            </div>
+
+             <!-- Success View -->
+            <div id="success-view" style="display: none;">
+                 <svg class="success-icon" xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <h2>Setup Complete!</h2>
+                <p>Your device has been successfully claimed and added to your account. You can now close this page and return to the dashboard.</p>
+            </div>
+
+        </div>
+        <footer class="config-footer">
+            <p>PICO IOT Virtual Device Portal</p>
+        </footer>
+    </div>
+    <script src="form.js" type="module"></script>
+</body>
+</html>

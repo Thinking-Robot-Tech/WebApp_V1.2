@@ -13,7 +13,7 @@
 <body>
     <header class="app-header">
         <div class="header-content">
-            <h1 class="app-title">My Devices</h1>
+            <h1 id="welcome-message" class="app-title">My Devices</h1>
             <div class="header-actions">
                 <span id="user-email" class="user-email-display"></span>
                 <button id="logout-btn" class="logout-button">Logout</button>
@@ -22,6 +22,16 @@
     </header>
 
     <main class="main-content">
+        <!-- Room Filter Bar -->
+        <div class="rooms-container">
+            <div id="rooms-filter-bar" class="rooms-filter-bar">
+                <!-- Room buttons will be dynamically inserted here -->
+            </div>
+            <button id="add-room-btn" class="add-room-btn" aria-label="Add New Room">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+
         <div id="device-list-container">
             <div class="loading-state">
                 <div class="spinner"></div>
@@ -30,58 +40,94 @@
         </div>
     </main>
 
-    <button id="add-device-btn" class="fab" aria-label="Add New Device">
+    <button id="add-device-fab" class="fab" aria-label="Add New Device">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     </button>
 
-    <!-- "Add Device" Modal with multiple steps -->
+    <!-- "Add Device" Modal - NEW MULTI-STEP -->
     <div id="add-device-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
             
-            <!-- Step 1: Scan QR or Enter MAC -->
-            <div id="claim-step-1">
-                <h2>Claim New Device</h2>
-                <p>Scan the QR code on your device or enter the MAC address manually.</p>
+            <!-- Step 1: Choose Method (Scan/Manual) -->
+            <div id="claim-step-1" class="modal-step">
+                <h2>1. Add Device</h2>
+                <p>Scan the QR code on your device or enter its MAC address manually.</p>
                 <div class="claim-options">
                     <button id="scan-qr-btn" class="modal-button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
                         Scan QR Code
                     </button>
-                    <p class="or-divider">OR</p>
-                    <form id="start-claim-form">
-                        <input type="text" id="device-id-input" placeholder="Enter MAC Address Manually" required>
-                        <button type="submit" class="modal-button secondary">Get Claim Code</button>
+                    <div class="or-divider">OR</div>
+                    <form id="manual-mac-form">
+                        <input type="text" id="device-mac-input" placeholder="Enter MAC Address" required>
+                        <button type="submit" class="modal-button secondary">Continue</button>
                     </form>
                 </div>
+                 <div class="or-divider">OR</div>
+                <button id="add-virtual-device-btn" class="modal-button secondary">Add a Virtual Device (for testing)</button>
             </div>
 
             <!-- QR Scanner View -->
-            <div id="qr-scanner-view" style="display: none;">
+            <div id="qr-scanner-view" class="modal-step" style="display: none;">
                  <h2>Scan QR Code</h2>
                  <div class="video-container">
-                    <video id="qr-video"></video>
+                    <video id="qr-video" playsinline></video>
                     <div class="scanner-overlay"></div>
                  </div>
                  <p id="qr-scan-feedback">Point your camera at the QR code</p>
                  <button id="cancel-scan-btn" class="modal-button secondary">Cancel</button>
             </div>
 
-            <!-- Step 2: Display Claim Code & Instructions -->
-            <div id="claim-step-2" style="display: none;">
-                <h2>Follow these steps</h2>
-                <ol class="instructions-list">
-                    <li>Power on your PICO device.</li>
-                    <li>On your phone, go to Wi-Fi settings and connect to the network named <strong id="device-hotspot-name">PICO-Setup-XXXX</strong>.</li>
-                    <li>A configuration page should open automatically. If not, open a browser and go to <strong>192.168.4.1</strong>.</li>
-                    <li>Enter the claim code below when prompted.</li>
-                </ol>
+            <!-- Step 2: Device Details -->
+            <div id="claim-step-2" class="modal-step" style="display: none;">
+                <h2>2. Device Details</h2>
+                <p>Name your device and assign it to a room.</p>
+                <form id="device-details-form">
+                    <div class="input-group">
+                        <label for="device-name-input">Device Name</label>
+                        <input type="text" id="device-name-input" placeholder="e.g., Desk Lamp" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="room-select">Assign to Room</label>
+                        <select id="room-select" required>
+                            <!-- Room options will be dynamically inserted here -->
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-button secondary back-btn">Back</button>
+                        <button type="submit" class="modal-button">Get Claim Code</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Show Claim Code -->
+            <div id="claim-step-3" class="modal-step" style="display: none;">
+                <h2>3. Claim Your Device</h2>
+                <p>Connect to the device's Wi-Fi hotspot (`PICO-Setup-XXXX`) and use the code below.</p>
                 <div class="claim-code-container">
                     <span id="claim-code-display">----</span>
                     <button id="copy-code-btn" class="copy-button">Copy</button>
                 </div>
                 <p class="waiting-text">Waiting for device to connect...</p>
+                <!-- This button will only be shown for virtual devices -->
+                <button id="go-to-virtual-form-btn" class="modal-button" style="display:none; margin-top: 16px;">Go to Virtual Setup Page</button>
             </div>
+        </div>
+    </div>
+
+    <!-- "Add Room" Modal -->
+    <div id="add-room-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" aria-label="Close">&times;</button>
+            <h2>Create New Room</h2>
+            <form id="add-room-form">
+                <div class="input-group">
+                    <label for="new-room-name">Room Name</label>
+                    <input type="text" id="new-room-name" placeholder="e.g., Garage" required>
+                </div>
+                <button type="submit" class="modal-button">Create Room</button>
+            </form>
         </div>
     </div>
     

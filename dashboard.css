@@ -9,6 +9,7 @@
     --border-color: #374151;
     --green-light: #10b981;
     --red-light: #ef4444;
+    --danger-color: #ef4444;
 }
 
 body {
@@ -19,87 +20,30 @@ body {
 }
 
 /* --- Header --- */
-.app-header {
-    background-color: #1a2332;
-    border-bottom: 1px solid var(--border-color);
-    padding: 0 16px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
+.app-header { background-color: #1a2332; border-bottom: 1px solid var(--border-color); padding: 0 16px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+.header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; height: 64px; }
+.app-title { font-size: 20px; font-weight: 700; margin: 0; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.user-email-display { color: var(--text-secondary); font-size: 14px; display: none; }
+.logout-button { background-color: var(--border-color); color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.logout-button:hover { background-color: #4b5563; }
 
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1400px;
-    margin: 0 auto;
-    height: 64px;
-}
-
-.app-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.user-email-display {
-    color: var(--text-secondary);
-    font-size: 14px;
-    display: none; /* Hidden on mobile */
-}
-
-.logout-button {
-    background-color: var(--border-color);
-    color: var(--text-primary);
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.logout-button:hover {
-    background-color: #4b5563;
-}
+/* --- Rooms Filter Bar --- */
+.rooms-container { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.rooms-filter-bar { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; /* Firefox */ -ms-overflow-style: none; /* IE 10+ */ }
+.rooms-filter-bar::-webkit-scrollbar { display: none; /* Safari and Chrome */ }
+.room-filter-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-secondary); border-radius: 99px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+.room-filter-btn:hover { background-color: var(--border-color); color: var(--text-primary); }
+.room-filter-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
+.add-room-btn { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; border: 1px dashed var(--border-color); background-color: transparent; color: var(--text-secondary); cursor: pointer; display: grid; place-items: center; transition: all 0.2s ease; }
+.add-room-btn:hover { background-color: var(--border-color); color: var(--text-primary); }
 
 /* --- Main Content & Grid --- */
-.main-content {
-    padding-top: 88px;
-    padding-bottom: 100px;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-
-.device-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* Mobile first: single column */
-    gap: 16px;
-}
+.main-content { padding-top: 88px; padding-bottom: 100px; max-width: 1400px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+.device-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 
 /* --- Device Card --- */
-.device-card {
-    background: var(--card-background);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: all 0.3s ease;
-}
-
+.device-card { background: var(--card-background); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; transition: all 0.3s ease; }
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .card-icon { width: 40px; height: 40px; display: grid; place-items: center; background-color: var(--border-color); border-radius: 12px; color: var(--primary-color); }
 .card-icon svg { width: 24px; height: 24px; }
@@ -134,18 +78,21 @@ body {
 .close-modal-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 0; line-height: 1; }
 .modal-button { width: 100%; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 16px; border: none; transition: all 0.3s ease; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .modal-button.secondary { background: var(--border-color); color: var(--text-primary); }
+.modal-button.secondary:hover { background-color: #4b5563; }
+.modal-button.danger { background: var(--danger-color); }
 .modal-actions { display: flex; gap: 16px; margin-top: 24px; }
+.or-divider { text-align: center; color: var(--text-secondary); font-weight: 600; margin: 20px 0; }
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-light); }
+input[type="text"], input[type="password"], select { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; box-sizing: border-box; font-family: 'Inter', sans-serif; font-size: 15px; background-color: var(--background-dark); color: var(--text-primary); transition: all 0.3s ease; }
+input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+#manual-mac-form input { margin-bottom: 16px; }
 
 /* Claim & QR Styles */
-.claim-options { display: flex; flex-direction: column; gap: 16px; }
-.or-divider { text-align: center; color: var(--text-secondary); font-weight: 600; }
-#start-claim-form input { width: 100%; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; box-sizing: border-box; font-family: 'Inter', sans-serif; font-size: 15px; background-color: var(--background-dark); color: var(--text-primary); transition: all 0.3s ease; }
-.video-container { position: relative; width: 100%; padding-top: 100%; border-radius: 12px; overflow: hidden; background-color: #000; margin-bottom: 16px; }
+.video-container { position: relative; width: 100%; padding-top: 75%; border-radius: 12px; overflow: hidden; background-color: #000; margin-bottom: 16px; }
 #qr-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
 .scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 0 4px var(--primary-color); }
 #qr-scan-feedback { text-align: center; color: var(--text-secondary); }
-.instructions-list { text-align: left; color: var(--text-secondary); line-height: 1.6; padding-left: 20px; margin-bottom: 24px; }
-.instructions-list li::marker { color: var(--primary-color); font-weight: 600; }
 .claim-code-container { display: flex; justify-content: space-between; align-items: center; background-color: var(--background-dark); border: 1px dashed var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 #claim-code-display { font-family: 'monospace'; font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: 2px; }
 .copy-button { background-color: var(--border-color); color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
