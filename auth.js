@@ -3,8 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword,
-    onAuthStateChanged
+    signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -36,9 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions ---
 
+    const toggleButtonLoading = (form, isLoading) => {
+        const button = form.querySelector('.auth-button');
+        const buttonText = button.querySelector('.button-text');
+        const spinner = button.querySelector('.spinner');
+        if (isLoading) {
+            button.disabled = true;
+            buttonText.style.display = 'none';
+            spinner.style.display = 'block';
+        } else {
+            button.disabled = false;
+            buttonText.style.display = 'block';
+            spinner.style.display = 'none';
+        }
+    };
+
     /**
-     * Handles user signup. Captures name and creates a user
-     * document in Firestore alongside the auth user.
+     * Handles user signup. Creates an auth user and a corresponding
+     * document in the 'users' collection in Firestore.
      * @param {Event} e The form submission event.
      */
     const handleSignup = (e) => {
@@ -51,43 +65,49 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please enter your name.');
             return;
         }
+        
+        toggleButtonLoading(signupFormEl, true);
 
         createUserWithEmailAndPassword(auth, email, password)
-            .then(async (userCredential) => {
+            .then((userCredential) => {
                 const user = userCredential.user;
                 console.log('User signed up successfully:', user.uid);
-
-                // Create the user document in the 'users' collection
                 const userDocRef = doc(db, "users", user.uid);
-                await setDoc(userDocRef, {
-                    name: name, // Save the user's name
+
+                // **FIX**: Use a .then() chain to ensure setDoc completes before redirect.
+                return setDoc(userDocRef, {
+                    name: name,
                     email: user.email,
-                    rooms: ["Living Room", "Bedroom", "Kitchen"], // Initialize with default rooms
+                    rooms: ["Living Room", "Bedroom", "Kitchen"],
                     createdAt: serverTimestamp()
                 });
-
-                console.log('User document created in Firestore.');
-                window.location.href = 'dashboard.html'; 
+            })
+            .then(() => {
+                console.log('User document created in Firestore. Redirecting...');
+                window.location.href = 'dashboard.html';
             })
             .catch((error) => {
                 console.error('Signup Error:', error);
                 alert(`Error creating account: ${error.message}`);
+                toggleButtonLoading(signupFormEl, false);
             });
     };
 
     const handleLogin = (e) => {
         e.preventDefault();
+        toggleButtonLoading(loginFormEl, true);
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
         signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                console.log('User logged in successfully:', userCredential.user);
+            .then(() => {
+                console.log('User logged in successfully');
                 window.location.href = 'dashboard.html';
             })
             .catch((error) => {
                 console.error('Login Error:', error);
                 alert(`Error logging in: ${error.message}`);
+                toggleButtonLoading(loginFormEl, false);
             });
     };
 
@@ -108,12 +128,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- Auth State Observer ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        if (!window.location.pathname.includes('dashboard.html') && !window.location.pathname.includes('form.html')) {
-            console.log('User is already logged in. Redirecting to dashboard...');
-            window.location.href = 'dashboard.html';
-        }
-    }
-});
+// The onAuthStateChanged listener has been removed from this file to prevent premature redirection.

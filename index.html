@@ -29,7 +29,10 @@
                     <div class="input-group">
                         <input type="password" id="login-password" placeholder="Password" required>
                     </div>
-                    <button type="submit">Login</button>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Login</span>
+                        <div class="spinner" style="display: none;"></div>
+                    </button>
                 </form>
                 <p class="toggle-text">Need an account? <span id="show-signup" class="toggle-link">Sign Up</span></p>
             </div>
@@ -47,7 +50,10 @@
                     <div class="input-group">
                         <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" required>
                     </div>
-                    <button type="submit">Create Account</button>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Create Account</span>
+                        <div class="spinner" style="display: none;"></div>
+                    </button>
                 </form>
                 <p class="toggle-text">Already have an account? <span id="show-login" class="toggle-link">Login</span></p>
             </div>

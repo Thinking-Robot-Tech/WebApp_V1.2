@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
                 const userData = doc.data();
-                if(welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.name || 'User'}`;
+                if(welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.name || 'UserA'}`;
                 userRooms = userData.rooms || [];
                 renderRoomFilters();
                 renderDevices();
