@@ -38,18 +38,24 @@
                 <p>Loading your devices...</p>
             </div>
         </div>
+
+        <!-- Room Actions (Edit/Delete) Button Container -->
+        <div id="room-actions-container" style="display: none;">
+            <button id="room-settings-btn" class="room-settings-btn" aria-label="Room Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                <span>Room Settings</span>
+            </button>
+        </div>
     </main>
 
     <button id="add-device-fab" class="fab" aria-label="Add New Device">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     </button>
 
-    <!-- "Add Device" Modal - NEW MULTI-STEP -->
+    <!-- "Add Device" Modal -->
     <div id="add-device-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
-            
-            <!-- Step 1: Choose Method (Scan/Manual) -->
             <div id="claim-step-1" class="modal-step">
                 <h2>1. Add Device</h2>
                 <p>Scan the QR code on your device or enter its MAC address manually.</p>
@@ -64,55 +70,30 @@
                         <button type="submit" class="modal-button secondary">Continue</button>
                     </form>
                 </div>
-                <!-- FIX: Changed the virtual device button to a small text link -->
                 <div class="virtual-device-link-container">
                     <span id="add-virtual-device-btn" class="virtual-device-link">Add a virtual device for testing</span>
                 </div>
             </div>
-
-            <!-- QR Scanner View -->
             <div id="qr-scanner-view" class="modal-step" style="display: none;">
                  <h2>Scan QR Code</h2>
-                 <div class="video-container">
-                    <video id="qr-video" playsinline></video>
-                    <div class="scanner-overlay"></div>
-                 </div>
+                 <div class="video-container"><video id="qr-video" playsinline></video><div class="scanner-overlay"></div></div>
                  <p id="qr-scan-feedback">Point your camera at the QR code</p>
                  <button id="cancel-scan-btn" class="modal-button secondary">Cancel</button>
             </div>
-
-            <!-- Step 2: Device Details -->
             <div id="claim-step-2" class="modal-step" style="display: none;">
                 <h2>2. Device Details</h2>
                 <p>Name your device and assign it to a room.</p>
                 <form id="device-details-form">
-                    <div class="input-group">
-                        <label for="device-name-input">Device Name</label>
-                        <input type="text" id="device-name-input" placeholder="e.g., Desk Lamp" required>
-                    </div>
-                    <div class="input-group">
-                        <label for="room-select">Assign to Room</label>
-                        <select id="room-select" required>
-                            <!-- Room options will be dynamically inserted here -->
-                        </select>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" class="modal-button secondary back-btn">Back</button>
-                        <button type="submit" class="modal-button">Get Claim Code</button>
-                    </div>
+                    <div class="input-group"><label for="device-name-input">Device Name</label><input type="text" id="device-name-input" placeholder="e.g., Desk Lamp" required></div>
+                    <div class="input-group"><label for="room-select">Assign to Room</label><select id="room-select" required></select></div>
+                    <div class="modal-actions"><button type="button" class="modal-button secondary back-btn">Back</button><button type="submit" class="modal-button">Get Claim Code</button></div>
                 </form>
             </div>
-
-            <!-- Step 3: Show Claim Code -->
             <div id="claim-step-3" class="modal-step" style="display: none;">
                 <h2>3. Claim Your Device</h2>
                 <p>Connect to the device's Wi-Fi hotspot (`PICO-Setup-XXXX`) and use the code below.</p>
-                <div class="claim-code-container">
-                    <span id="claim-code-display">----</span>
-                    <button id="copy-code-btn" class="copy-button">Copy</button>
-                </div>
+                <div class="claim-code-container"><span id="claim-code-display">----</span><button id="copy-code-btn" class="copy-button">Copy</button></div>
                 <p class="waiting-text">Waiting for device to connect...</p>
-                <!-- This button will only be shown for virtual devices -->
                 <button id="go-to-virtual-form-btn" class="modal-button" style="display:none; margin-top: 16px;">Go to Virtual Setup Page</button>
             </div>
         </div>
@@ -124,24 +105,41 @@
             <button class="close-modal-btn" aria-label="Close">&times;</button>
             <h2>Create New Room</h2>
             <form id="add-room-form">
-                <div class="input-group">
-                    <label for="new-room-name">Room Name</label>
-                    <input type="text" id="new-room-name" placeholder="e.g., Garage" required>
-                </div>
+                <div class="input-group"><label for="new-room-name">Room Name</label><input type="text" id="new-room-name" placeholder="e.g., Garage" required></div>
                 <button type="submit" class="modal-button">Create Room</button>
             </form>
         </div>
     </div>
     
-    <!-- Confirmation Modal for Deleting -->
-    <div id="confirm-delete-modal" class="modal-overlay">
+    <!-- "Edit Room" Modal -->
+    <div id="edit-room-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" aria-label="Close">&times;</button>
+            <h2>Edit Room</h2>
+            <form id="edit-room-form">
+                <div class="input-group"><label for="edit-room-name">Room Name</label><input type="text" id="edit-room-name" required></div>
+                <div class="input-group"><label>Devices in this Room</label><div id="devices-in-room-list" class="devices-in-room-list"></div></div>
+                <div class="modal-actions">
+                    <button type="button" id="delete-room-btn" class="modal-button danger">Delete Room</button>
+                    <button type="submit" class="modal-button">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modals -->
+    <div id="confirm-device-delete-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>Confirm Deletion</h2>
-            <p id="confirm-delete-text">Are you sure you want to delete this device? This action cannot be undone.</p>
-            <div class="modal-actions">
-                <button id="cancel-delete-btn" class="modal-button secondary">Cancel</button>
-                <button id="confirm-delete-btn" class="modal-button danger">Delete</button>
-            </div>
+            <p id="confirm-device-delete-text">Are you sure you want to delete this device? This action cannot be undone.</p>
+            <div class="modal-actions"><button class="modal-button secondary cancel-btn">Cancel</button><button class="modal-button danger confirm-btn">Delete</button></div>
+        </div>
+    </div>
+    <div id="confirm-room-delete-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirm Deletion</h2>
+            <p>Are you sure you want to delete this room? Devices in this room will be moved to "Unassigned".</p>
+            <div class="modal-actions"><button class="modal-button secondary cancel-btn">Cancel</button><button class="modal-button danger confirm-btn">Delete Room</button></div>
         </div>
     </div>
 

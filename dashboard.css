@@ -30,13 +30,19 @@ body {
 
 /* --- Rooms Filter Bar --- */
 .rooms-container { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
-.rooms-filter-bar { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; /* Firefox */ -ms-overflow-style: none; /* IE 10+ */ }
-.rooms-filter-bar::-webkit-scrollbar { display: none; /* Safari and Chrome */ }
-.room-filter-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-secondary); border-radius: 99px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+.rooms-filter-bar { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; }
+.rooms-filter-bar::-webkit-scrollbar { display: none; }
+.room-filter-btn { padding: 8px 16px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-secondary); border-radius: 99px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; user-select: none; }
 .room-filter-btn:hover { background-color: var(--border-color); color: var(--text-primary); }
 .room-filter-btn.active { background-color: var(--primary-color); border-color: var(--primary-color); color: white; }
+.room-filter-btn.dragging { opacity: 0.5; background: var(--border-color); }
 .add-room-btn { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; border: 1px dashed var(--border-color); background-color: transparent; color: var(--text-secondary); cursor: pointer; display: grid; place-items: center; transition: all 0.2s ease; }
 .add-room-btn:hover { background-color: var(--border-color); color: var(--text-primary); }
+
+/* --- Room Actions --- */
+#room-actions-container { text-align: center; margin-top: 24px; }
+.room-settings-btn { background: none; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 16px; border-radius: 99px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; }
+.room-settings-btn:hover { background-color: var(--border-color); color: var(--text-primary); }
 
 /* --- Main Content & Grid --- */
 .main-content { padding-top: 88px; padding-bottom: 100px; max-width: 1400px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
@@ -88,6 +94,13 @@ input[type="text"], input[type="password"], select { width: 100%; padding: 14px;
 input:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
 #manual-mac-form input { margin-bottom: 16px; }
 
+/* Edit Room Modal Specifics */
+.devices-in-room-list { max-height: 150px; overflow-y: auto; background-color: var(--background-dark); border-radius: 8px; border: 1px solid var(--border-color); padding: 8px; }
+.devices-in-room-list p { font-size: 14px; color: var(--text-secondary); text-align: center; margin: 20px 0; }
+.device-list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-radius: 6px; }
+.device-list-item:nth-child(odd) { background-color: rgba(0,0,0,0.1); }
+.device-list-item span { font-weight: 500; }
+
 /* Claim & QR Styles */
 .video-container { position: relative; width: 100%; padding-top: 75%; border-radius: 12px; overflow: hidden; background-color: #000; margin-bottom: 16px; }
 #qr-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -97,22 +110,9 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 #claim-code-display { font-family: 'monospace'; font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: 2px; }
 .copy-button { background-color: var(--border-color); color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
 .waiting-text { font-size: 14px; color: var(--text-secondary); text-align: center; }
-
-.virtual-device-link-container {
-    text-align: center;
-    margin-top: 24px;
-}
-.virtual-device-link {
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-.virtual-device-link:hover {
-    color: var(--primary-color);
-    text-decoration: underline;
-}
+.virtual-device-link-container { text-align: center; margin-top: 24px; }
+.virtual-device-link { color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: color 0.2s ease; }
+.virtual-device-link:hover { color: var(--primary-color); text-decoration: underline; }
 
 /* --- Toggle Switch --- */
 .switch { position: relative; display: inline-block; width: 50px; height: 28px; }

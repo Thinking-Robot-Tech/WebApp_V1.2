@@ -1,7 +1,7 @@
 // --- Firebase SDK Imports ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- Firebase Configuration ---
 const firebaseConfig = {
@@ -24,105 +24,129 @@ let currentUserId = null;
 let allDevices = [];
 let userRooms = [];
 let activeRoomFilter = 'All';
-let claimProcessData = {}; // To hold data between modal steps
+let claimProcessData = {};
 let qrScanner = null;
 let videoStream = null;
+let draggedRoom = null;
 
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Element References ---
-    const logoutBtn = document.getElementById('logout-btn');
     const welcomeMessage = document.getElementById('welcome-message');
     const deviceListContainer = document.getElementById('device-list-container');
     const roomsFilterBar = document.getElementById('rooms-filter-bar');
-    const addRoomBtn = document.getElementById('add-room-btn');
-    const addDeviceFab = document.getElementById('add-device-fab');
+    const roomActionsContainer = document.getElementById('room-actions-container');
     
     // Modals
     const addDeviceModal = document.getElementById('add-device-modal');
     const addRoomModal = document.getElementById('add-room-modal');
-    const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+    const editRoomModal = document.getElementById('edit-room-modal');
+    const confirmDeviceDeleteModal = document.getElementById('confirm-device-delete-modal');
+    const confirmRoomDeleteModal = document.getElementById('confirm-room-delete-modal');
     
-    // Add Device Modal Steps & Elements
-    const claimStep1 = document.getElementById('claim-step-1');
-    const claimStep2 = document.getElementById('claim-step-2');
-    const claimStep3 = document.getElementById('claim-step-3');
-    const qrScannerView = document.getElementById('qr-scanner-view');
-    const qrVideo = document.getElementById('qr-video');
-    const manualMacForm = document.getElementById('manual-mac-form');
-    const scanQrBtn = document.getElementById('scan-qr-btn');
-    const cancelScanBtn = document.getElementById('cancel-scan-btn');
-    const addVirtualDeviceBtn = document.getElementById('add-virtual-device-btn');
-    const deviceDetailsForm = document.getElementById('device-details-form');
-    const deviceNameInput = document.getElementById('device-name-input');
-    const roomSelect = document.getElementById('room-select');
-    const claimCodeDisplay = document.getElementById('claim-code-display');
-    const copyCodeBtn = document.getElementById('copy-code-btn');
-    const goToVirtualFormBtn = document.getElementById('go-to-virtual-form-btn');
-    
-    // Other Modal Elements
+    // Forms & Buttons
     const addRoomForm = document.getElementById('add-room-form');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const confirmDeleteText = document.getElementById('confirm-delete-text');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-
+    const editRoomForm = document.getElementById('edit-room-form');
+    const deleteRoomBtn = document.getElementById('delete-room-btn');
+    const roomSettingsBtn = document.getElementById('room-settings-btn');
 
     // --- Functions ---
 
     const toggleModal = (modalElement, show) => {
+        if (!modalElement) return;
         if (show) modalElement.classList.add('visible');
         else modalElement.classList.remove('visible');
-    };
-
-    const resetAddDeviceModal = () => {
-        stopQrScanner();
-        claimProcessData = {};
-        [claimStep1, claimStep2, claimStep3, qrScannerView].forEach(el => {
-            if (el) el.style.display = 'none';
-        });
-        if (claimStep1) claimStep1.style.display = 'block';
-        if(manualMacForm) manualMacForm.reset();
-        if(deviceDetailsForm) deviceDetailsForm.reset();
     };
 
     // --- Room Management ---
     const renderRoomFilters = () => {
         if (!roomsFilterBar) return;
         roomsFilterBar.innerHTML = '';
-        const allBtn = document.createElement('button');
-        allBtn.className = 'room-filter-btn';
-        allBtn.textContent = 'All Devices';
-        allBtn.dataset.room = 'All';
-        if (activeRoomFilter === 'All') allBtn.classList.add('active');
-        roomsFilterBar.appendChild(allBtn);
-
-        userRooms.forEach(room => {
+        ['All', ...userRooms].forEach(room => {
             const roomBtn = document.createElement('button');
             roomBtn.className = 'room-filter-btn';
-            roomBtn.textContent = room;
+            roomBtn.textContent = room === 'All' ? 'All Devices' : room;
             roomBtn.dataset.room = room;
             if (activeRoomFilter === room) roomBtn.classList.add('active');
+            
+            if (room !== 'All') {
+                roomBtn.draggable = true;
+            }
             roomsFilterBar.appendChild(roomBtn);
         });
     };
-    
-    const handleAddRoom = async (e) => {
-        e.preventDefault();
-        const newRoomNameInput = document.getElementById('new-room-name');
-        const newRoomName = newRoomNameInput.value.trim();
-        if (newRoomName && currentUserId && !userRooms.includes(newRoomName)) {
-            const userDocRef = doc(db, 'users', currentUserId);
-            await setDoc(userDocRef, {
-                rooms: arrayUnion(newRoomName)
-            }, { merge: true });
+
+    const openEditRoomModal = (roomName) => {
+        if (!editRoomModal) return;
+        const roomNameInput = document.getElementById('edit-room-name');
+        const devicesListDiv = document.getElementById('devices-in-room-list');
+        
+        roomNameInput.value = roomName;
+        editRoomForm.dataset.originalRoomName = roomName;
+        
+        const devicesInRoom = allDevices.filter(d => d.room === roomName);
+        if (devicesInRoom.length > 0) {
+            devicesListDiv.innerHTML = devicesInRoom.map(d => `<div class="device-list-item"><span>${d.name}</span></div>`).join('');
+        } else {
+            devicesListDiv.innerHTML = `<p>No devices in this room.</p>`;
         }
-        newRoomNameInput.value = '';
-        if(addRoomModal) toggleModal(addRoomModal, false);
+        
+        toggleModal(editRoomModal, true);
     };
 
-    // --- Device Rendering & Filtering ---
+    const handleEditRoom = async (e) => {
+        e.preventDefault();
+        const originalName = editRoomForm.dataset.originalRoomName;
+        const newName = document.getElementById('edit-room-name').value.trim();
+        
+        if (!newName || newName === originalName) {
+            toggleModal(editRoomModal, false);
+            return;
+        }
+
+        const newRooms = userRooms.map(r => r === originalName ? newName : r);
+        const userDocRef = doc(db, 'users', currentUserId);
+        await updateDoc(userDocRef, { rooms: newRooms });
+
+        const devicesToUpdate = allDevices.filter(d => d.room === originalName);
+        if (devicesToUpdate.length > 0) {
+            const batch = writeBatch(db);
+            devicesToUpdate.forEach(device => {
+                const deviceRef = doc(db, 'devices', device.id);
+                batch.update(deviceRef, { room: newName });
+            });
+            await batch.commit();
+        }
+        
+        if (activeRoomFilter === originalName) activeRoomFilter = newName;
+        toggleModal(editRoomModal, false);
+    };
+
+    const handleDeleteRoom = async () => {
+        const roomToDelete = editRoomForm.dataset.originalRoomName;
+        const newRooms = userRooms.filter(r => r !== roomToDelete);
+        
+        const userDocRef = doc(db, 'users', currentUserId);
+        await updateDoc(userDocRef, { rooms: newRooms });
+
+        const devicesToUpdate = allDevices.filter(d => d.room === roomToDelete);
+        if (devicesToUpdate.length > 0) {
+            const batch = writeBatch(db);
+            devicesToUpdate.forEach(device => {
+                const deviceRef = doc(db, 'devices', device.id);
+                batch.update(deviceRef, { room: 'Unassigned' });
+            });
+            await batch.commit();
+        }
+        
+        if (activeRoomFilter === roomToDelete) activeRoomFilter = 'All';
+        toggleModal(confirmRoomDeleteModal, false);
+        toggleModal(editRoomModal, false);
+    };
+    
+    // --- Device Rendering & Actions ---
     const renderDevices = () => {
         if (!deviceListContainer) return;
         const devicesToRender = activeRoomFilter === 'All'
@@ -131,34 +155,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (devicesToRender.length === 0) {
             deviceListContainer.innerHTML = `<div class="empty-state"><h3>No Devices in ${activeRoomFilter}</h3><p>Add a new device or select another room.</p></div>`;
-            return;
+        } else {
+            deviceListContainer.innerHTML = '<div class="device-grid"></div>';
+            const grid = deviceListContainer.querySelector('.device-grid');
+            devicesToRender.sort((a, b) => a.name.localeCompare(b.name)).forEach(device => {
+                const card = document.createElement('div');
+                card.className = 'device-card';
+                const isOnline = device.state?.isOnline ?? false;
+                const isOn = device.state?.isOn ?? false;
+                
+                card.innerHTML = `
+                    <div class="card-top">
+                        <div class="card-icon">${getDeviceIcon(device.type)}</div>
+                        <div class="card-status ${isOnline ? 'online' : 'offline'}">${isOnline ? 'Online' : 'Offline'}</div>
+                    </div>
+                    <div class="card-main">
+                        <h4 class="card-title">${device.name || 'Unnamed Device'}</h4>
+                        <p class="card-type">${device.room || 'Unassigned'} - ${device.type || 'PICO Device'}</p>
+                    </div>
+                    <div class="card-bottom">
+                        <button class="delete-btn" aria-label="Delete Device"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                        <label class="switch"><input type="checkbox" class="device-toggle" ${isOn ? 'checked' : ''} ${!isOnline ? 'disabled' : ''}><span class="slider round"></span></label>
+                    </div>
+                `;
+                card.querySelector('.device-toggle').addEventListener('change', () => handleToggleDevice(device.id, isOn));
+                card.querySelector('.delete-btn').addEventListener('click', () => openDeleteConfirmation(device.id, device.name, 'device'));
+                grid.appendChild(card);
+            });
         }
-        deviceListContainer.innerHTML = '<div class="device-grid"></div>';
-        const grid = deviceListContainer.querySelector('.device-grid');
-        devicesToRender.sort((a, b) => a.name.localeCompare(b.name)).forEach(device => {
-            const card = document.createElement('div');
-            card.className = 'device-card';
-            const isOnline = device.state?.isOnline ?? false;
-            const isOn = device.state?.isOn ?? false;
-            
-            card.innerHTML = `
-                <div class="card-top">
-                    <div class="card-icon">${getDeviceIcon(device.type)}</div>
-                    <div class="card-status ${isOnline ? 'online' : 'offline'}">${isOnline ? 'Online' : 'Offline'}</div>
-                </div>
-                <div class="card-main">
-                    <h4 class="card-title">${device.name || 'Unnamed Device'}</h4>
-                    <p class="card-type">${device.room || 'Unassigned'} - ${device.type || 'PICO Device'}</p>
-                </div>
-                <div class="card-bottom">
-                    <button class="delete-btn" aria-label="Delete Device"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-                    <label class="switch"><input type="checkbox" class="device-toggle" ${isOn ? 'checked' : ''} ${!isOnline ? 'disabled' : ''}><span class="slider round"></span></label>
-                </div>
-            `;
-            card.querySelector('.device-toggle').addEventListener('change', () => handleToggleDevice(device.id, isOn));
-            card.querySelector('.delete-btn').addEventListener('click', () => openDeleteConfirmation(device.id, device.name));
-            grid.appendChild(card);
-        });
+        
+        // Show or hide the room settings button
+        if (roomActionsContainer) {
+            roomActionsContainer.style.display = activeRoomFilter !== 'All' ? 'block' : 'none';
+        }
     };
     
     const getDeviceIcon = (type) => {
@@ -170,27 +199,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- Add Device Flow ---
     const startQrScanner = async () => {
         if (!window.isSecureContext) {
             alert("Camera access is only available on secure (https) pages or localhost.");
             return;
         }
+        const qrVideo = document.getElementById('qr-video');
         if (!qrVideo) return;
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             qrVideo.srcObject = videoStream;
-            
-            // **FIX**: Use qrVideo.play() which is more reliable than oncanplay.
             await qrVideo.play();
-            
-            if(claimStep1) claimStep1.style.display = 'none';
-            if(qrScannerView) qrScannerView.style.display = 'block';
-            scanFrame();
-
+            goToStep('qr');
         } catch (err) {
             console.error("Error accessing camera: ", err);
-            alert("Could not access camera. Please ensure you've given permission and are not blocking it.");
+            alert("Could not access camera. Please ensure you've given permission.");
             resetAddDeviceModal();
         }
     };
@@ -203,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const scanFrame = () => {
+        const qrVideo = document.getElementById('qr-video');
         if (qrVideo && qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
             const canvas = document.createElement('canvas');
             canvas.width = qrVideo.videoWidth;
@@ -224,23 +248,30 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const goToStep = (stepNumber) => {
-        [claimStep1, claimStep2, claimStep3, qrScannerView].forEach(el => {
+        [document.getElementById('claim-step-1'), document.getElementById('claim-step-2'), document.getElementById('claim-step-3'), document.getElementById('qr-scanner-view')].forEach(el => {
             if (el) el.style.display = 'none';
         });
-        if (stepNumber === 1 && claimStep1) claimStep1.style.display = 'block';
-        if (stepNumber === 2 && claimStep2) {
+        const steps = {
+            1: 'claim-step-1',
+            2: 'claim-step-2',
+            3: 'claim-step-3',
+            'qr': 'qr-scanner-view'
+        };
+        const stepElement = document.getElementById(steps[stepNumber]);
+        if (stepElement) stepElement.style.display = 'block';
+
+        if (stepNumber === 2) {
+            const roomSelect = document.getElementById('room-select');
             if (roomSelect) {
                 roomSelect.innerHTML = '';
-                userRooms.forEach(room => {
+                [...userRooms, 'Unassigned'].forEach(room => {
                     const option = document.createElement('option');
                     option.value = room;
                     option.textContent = room;
                     roomSelect.appendChild(option);
                 });
             }
-            claimStep2.style.display = 'block';
         }
-        if (stepNumber === 3 && claimStep3) claimStep3.style.display = 'block';
     };
 
     const generateClaimCode = () => {
@@ -252,11 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleStartClaimProcess = async () => {
         if (!currentUserId || !claimProcessData.macAddress) return;
-
         const claimCode = generateClaimCode();
         claimProcessData.claimCode = claimCode;
         const claimRef = doc(db, 'deviceClaims', claimProcessData.macAddress);
-
         try {
             await setDoc(claimRef, {
                 ownerId: currentUserId,
@@ -266,36 +295,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 isVirtual: claimProcessData.isVirtual,
                 createdAt: serverTimestamp()
             });
-            
-            if(claimCodeDisplay) claimCodeDisplay.textContent = claimCode;
-            if(goToVirtualFormBtn) goToVirtualFormBtn.style.display = claimProcessData.isVirtual ? 'block' : 'none';
+            if(document.getElementById('claim-code-display')) document.getElementById('claim-code-display').textContent = claimCode;
+            if(document.getElementById('go-to-virtual-form-btn')) document.getElementById('go-to-virtual-form-btn').style.display = claimProcessData.isVirtual ? 'block' : 'none';
             goToStep(3);
-
         } catch (error) {
             console.error("Error creating device claim:", error);
-            alert("Could not start the claim process. Please try again.");
+            alert("Could not start the claim process.");
             resetAddDeviceModal();
         }
     };
 
-    // --- Other Device Actions ---
     const handleToggleDevice = async (deviceId, currentState) => {
         const deviceRef = doc(db, 'devices', deviceId);
         await updateDoc(deviceRef, { "state.isOn": !currentState });
     };
 
-    const openDeleteConfirmation = (deviceId, deviceName) => {
-        if(confirmDeleteText) confirmDeleteText.textContent = `Are you sure you want to delete "${deviceName}"? This action cannot be undone.`;
-        if(confirmDeleteBtn) confirmDeleteBtn.dataset.deviceId = deviceId;
-        if(confirmDeleteModal) toggleModal(confirmDeleteModal, true);
+    const openDeleteConfirmation = (id, name, type) => {
+        if (type === 'device') {
+            const modal = document.getElementById('confirm-device-delete-modal');
+            modal.querySelector('p').textContent = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
+            modal.querySelector('.confirm-btn').dataset.deviceId = id;
+            toggleModal(modal, true);
+        }
     };
 
-    const handleDeleteDevice = async () => {
-        const deviceId = confirmDeleteBtn.dataset.deviceId;
+    const handleDeleteDevice = async (e) => {
+        const deviceId = e.target.dataset.deviceId;
         if (deviceId) {
             await deleteDoc(doc(db, 'devices', deviceId));
-            if(confirmDeleteModal) toggleModal(confirmDeleteModal, false);
         }
+        toggleModal(document.getElementById('confirm-device-delete-modal'), false);
     };
 
     // --- Auth & Data Fetching ---
@@ -307,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
                 const userData = doc.data();
-                if(welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.name || 'UserA'}`;
+                if(welcomeMessage) welcomeMessage.textContent = `Welcome, ${userData.name || 'User'}`;
                 userRooms = userData.rooms || [];
                 renderRoomFilters();
                 renderDevices();
@@ -318,10 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         unsubscribeFromDevices = onSnapshot(devicesQuery, (querySnapshot) => {
             allDevices = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderDevices();
-        }, (error) => {
-            console.error("Error fetching devices: ", error);
-            if(deviceListContainer) deviceListContainer.innerHTML = `<div class="empty-state"><h3>Error</h3><p>Could not load your devices.</p></div>`;
-        });
+        }, (error) => console.error("Error fetching devices: ", error));
     };
 
     const cleanupListeners = () => {
@@ -336,18 +362,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const addSafeEventListener = (element, event, handler) => {
         if (element) {
             element.addEventListener(event, handler);
-        } else {
-            console.warn(`Could not find element to attach '${event}' listener to.`);
         }
     };
 
     // Main page actions
-    addSafeEventListener(logoutBtn, 'click', () => signOut(auth));
-    addSafeEventListener(addDeviceFab, 'click', () => { resetAddDeviceModal(); toggleModal(addDeviceModal, true); });
-    addSafeEventListener(addRoomBtn, 'click', () => toggleModal(addRoomModal, true));
-    addSafeEventListener(addRoomForm, 'submit', handleAddRoom);
-    
-    // Room filter bar
+    addSafeEventListener(document.getElementById('logout-btn'), 'click', () => signOut(auth));
+    addSafeEventListener(document.getElementById('add-device-fab'), 'click', () => { resetAddDeviceModal(); toggleModal(addDeviceModal, true); });
+    addSafeEventListener(document.getElementById('add-room-btn'), 'click', () => toggleModal(addRoomModal, true));
+    addSafeEventListener(addRoomForm, 'submit', (e) => { e.preventDefault(); handleAddRoom(e); });
+    addSafeEventListener(editRoomForm, 'submit', handleEditRoom);
+    addSafeEventListener(deleteRoomBtn, 'click', () => toggleModal(confirmRoomDeleteModal, true));
+    addSafeEventListener(roomSettingsBtn, 'click', () => openEditRoomModal(activeRoomFilter));
+
+    // Room filter bar drag-and-drop
+    addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
+        if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
+            draggedRoom = e.target;
+            e.target.classList.add('dragging');
+        }
+    });
+    addSafeEventListener(roomsFilterBar, 'dragend', (e) => {
+        if (e.target.classList.contains('room-filter-btn')) {
+            e.target.classList.remove('dragging');
+        }
+    });
+    addSafeEventListener(roomsFilterBar, 'dragover', (e) => {
+        e.preventDefault();
+        const afterElement = [...roomsFilterBar.querySelectorAll('.room-filter-btn:not(.dragging):not([data-room="All"])')].reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientX - box.left - box.width / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        
+        if (draggedRoom) {
+            if (afterElement == null) {
+                roomsFilterBar.appendChild(draggedRoom);
+            } else {
+                roomsFilterBar.insertBefore(draggedRoom, afterElement);
+            }
+        }
+    });
+    addSafeEventListener(roomsFilterBar, 'drop', async () => {
+        const newOrder = [...roomsFilterBar.querySelectorAll('.room-filter-btn')]
+            .map(btn => btn.dataset.room)
+            .filter(room => room !== 'All');
+        userRooms = newOrder;
+        const userDocRef = doc(db, 'users', currentUserId);
+        await updateDoc(userDocRef, { rooms: newOrder });
+    });
+
+    // Room filter bar click
     addSafeEventListener(roomsFilterBar, 'click', (e) => {
         if (e.target.classList.contains('room-filter-btn')) {
             activeRoomFilter = e.target.dataset.room;
@@ -356,67 +424,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add Device Modal
-    if (addDeviceModal) {
-        const closeBtn = addDeviceModal.querySelector('.close-modal-btn');
-        addSafeEventListener(closeBtn, 'click', () => toggleModal(addDeviceModal, false));
-    }
-    addSafeEventListener(scanQrBtn, 'click', startQrScanner);
-    addSafeEventListener(cancelScanBtn, 'click', () => { stopQrScanner(); goToStep(1); });
-    
-    addSafeEventListener(manualMacForm, 'submit', (e) => {
-        e.preventDefault();
-        const macInput = document.getElementById('device-mac-input');
-        if (macInput) {
-            claimProcessData.macAddress = macInput.value.trim();
-            claimProcessData.isVirtual = false;
-            if (claimProcessData.macAddress) goToStep(2);
+    // Modals
+    [addDeviceModal, addRoomModal, editRoomModal, confirmDeviceDeleteModal, confirmRoomDeleteModal].forEach(modal => {
+        if (modal) {
+            addSafeEventListener(modal.querySelector('.close-modal-btn'), 'click', () => toggleModal(modal, false));
+            modal.querySelectorAll('.cancel-btn').forEach(btn => addSafeEventListener(btn, 'click', () => toggleModal(modal, false)));
         }
     });
-
-    addSafeEventListener(addVirtualDeviceBtn, 'click', () => {
+    addSafeEventListener(confirmDeviceDeleteModal.querySelector('.confirm-btn'), 'click', handleDeleteDevice);
+    addSafeEventListener(confirmRoomDeleteModal.querySelector('.confirm-btn'), 'click', handleDeleteRoom);
+    
+    // Add Device Modal specific listeners
+    const resetAddDeviceModal = () => {
+        stopQrScanner();
+        claimProcessData = {};
+        goToStep(1);
+        const manualMacForm = document.getElementById('manual-mac-form');
+        const deviceDetailsForm = document.getElementById('device-details-form');
+        if(manualMacForm) manualMacForm.reset();
+        if(deviceDetailsForm) deviceDetailsForm.reset();
+    };
+    addSafeEventListener(document.getElementById('scan-qr-btn'), 'click', startQrScanner);
+    addSafeEventListener(document.getElementById('cancel-scan-btn'), 'click', () => { stopQrScanner(); goToStep(1); });
+    addSafeEventListener(document.getElementById('manual-mac-form'), 'submit', (e) => {
+        e.preventDefault();
+        claimProcessData.macAddress = document.getElementById('device-mac-input').value.trim();
+        claimProcessData.isVirtual = false;
+        if (claimProcessData.macAddress) goToStep(2);
+    });
+    addSafeEventListener(document.getElementById('add-virtual-device-btn'), 'click', () => {
         claimProcessData.macAddress = 'VIRT:' + Array(5).fill(0).map(() => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':').toUpperCase();
         claimProcessData.isVirtual = true;
         goToStep(2);
     });
-
-    addSafeEventListener(deviceDetailsForm, 'submit', (e) => {
+    addSafeEventListener(document.getElementById('device-details-form'), 'submit', (e) => {
         e.preventDefault();
-        if (deviceNameInput) claimProcessData.deviceName = deviceNameInput.value.trim();
-        if (roomSelect) claimProcessData.room = roomSelect.value;
+        claimProcessData.deviceName = document.getElementById('device-name-input').value.trim();
+        claimProcessData.room = document.getElementById('room-select').value;
         handleStartClaimProcess();
     });
-
     if (addDeviceModal) {
-        const backBtn = addDeviceModal.querySelector('.back-btn');
-        addSafeEventListener(backBtn, 'click', () => goToStep(1));
+        addSafeEventListener(addDeviceModal.querySelector('.back-btn'), 'click', () => goToStep(1));
     }
-
-    addSafeEventListener(copyCodeBtn, 'click', () => {
+    addSafeEventListener(document.getElementById('copy-code-btn'), 'click', () => {
         if (claimProcessData.claimCode) {
             navigator.clipboard.writeText(claimProcessData.claimCode).then(() => {
-                copyCodeBtn.textContent = 'Copied!';
-                setTimeout(() => { copyCodeBtn.textContent = 'Copy'; }, 2000);
+                document.getElementById('copy-code-btn').textContent = 'Copied!';
+                setTimeout(() => { document.getElementById('copy-code-btn').textContent = 'Copy'; }, 2000);
             });
         }
     });
-
-    addSafeEventListener(goToVirtualFormBtn, 'click', () => {
+    addSafeEventListener(document.getElementById('go-to-virtual-form-btn'), 'click', () => {
         window.open(`form.html?mac=${encodeURIComponent(claimProcessData.macAddress)}&code=${claimProcessData.claimCode}`, '_blank');
         toggleModal(addDeviceModal, false);
     });
-    
-    // Other Modals
-    if (addRoomModal) {
-        const closeBtn = addRoomModal.querySelector('.close-modal-btn');
-        addSafeEventListener(closeBtn, 'click', () => toggleModal(addRoomModal, false));
-    }
-    if (confirmDeleteModal) {
-        const closeBtn = confirmDeleteModal.querySelector('.close-modal-btn');
-        addSafeEventListener(closeBtn, 'click', () => toggleModal(confirmDeleteModal, false));
-    }
-    addSafeEventListener(cancelDeleteBtn, 'click', () => toggleModal(confirmDeleteModal, false));
-    addSafeEventListener(confirmDeleteBtn, 'click', handleDeleteDevice);
 
     // --- Auth State Observer ---
     onAuthStateChanged(auth, (user) => {
