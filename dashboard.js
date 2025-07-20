@@ -19,7 +19,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- Global State ---
 let currentUserId = null;
 let allDevices = [];
 let userRooms = [];
@@ -28,6 +27,7 @@ let claimProcessData = {};
 let qrScanner = null;
 let videoStream = null;
 let draggedRoom = null;
+let placeholder = null; // NEW: Placeholder for drag and drop
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
 // NEW: State for touch drag delay
@@ -93,7 +93,7 @@ const toggleModal = (modalElement, show) => {
     }
 };
 
-// --- Room Management ---
+
 const renderRoomFilters = () => {
     if (!roomsFilterBar) return;
     roomsFilterBar.innerHTML = '';
@@ -107,6 +107,8 @@ const renderRoomFilters = () => {
         roomsFilterBar.appendChild(roomBtn);
     });
 };
+
+
 
 const handleAddRoom = async (e) => {
     e.preventDefault();
@@ -533,32 +535,61 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
         if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
             draggedRoom = e.target;
-            setTimeout(() => e.target.classList.add('dragging'), 0);
+            // NEW: Create a placeholder and hide the original element
+            placeholder = document.createElement('div');
+            placeholder.className = 'room-filter-placeholder';
+            placeholder.style.width = draggedRoom.offsetWidth + 'px';
+            placeholder.style.height = draggedRoom.offsetHeight + 'px';
+            placeholder.style.border = '1px dashed var(--border-color)';
+            placeholder.style.borderRadius = '99px';
+            placeholder.style.marginRight = '8px'; // Match gap
+            placeholder.style.boxSizing = 'border-box';
+
+
+            roomsFilterBar.insertBefore(placeholder, draggedRoom);
+            draggedRoom.style.display = 'none'; // Hide original element during drag
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedRoom.dataset.room); // Required for Firefox
         }
     });
 
     addSafeEventListener(roomsFilterBar, 'dragend', () => {
         if (draggedRoom) {
+            // NEW: Restore original element and remove placeholder
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(draggedRoom, placeholder);
+                placeholder.parentNode.removeChild(placeholder);
+            }
+            draggedRoom.style.display = ''; // Show original element
             draggedRoom.classList.remove('dragging');
             draggedRoom = null;
+            placeholder = null;
         }
     });
 
     addSafeEventListener(roomsFilterBar, 'dragover', (e) => {
         e.preventDefault();
-        if (!draggedRoom) return;
+        if (!draggedRoom || !placeholder) return;
         const afterElement = getDragAfterElement(roomsFilterBar, e.clientX);
         if (afterElement == null) {
-            roomsFilterBar.appendChild(draggedRoom);
+            roomsFilterBar.appendChild(placeholder);
         } else {
-            roomsFilterBar.insertBefore(draggedRoom, afterElement);
+            roomsFilterBar.insertBefore(placeholder, afterElement);
         }
     });
 
     addSafeEventListener(roomsFilterBar, 'drop', (e) => {
         e.preventDefault();
         if (draggedRoom) {
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(draggedRoom, placeholder);
+                placeholder.parentNode.removeChild(placeholder);
+            }
+            draggedRoom.style.display = ''; // Show original element
+            draggedRoom.classList.remove('dragging');
             saveRoomOrder();
+            draggedRoom = null;
+            placeholder = null;
         }
     });
 
@@ -566,11 +597,25 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeEventListener(roomsFilterBar, 'touchstart', (e) => {
         const target = e.target.closest('.room-filter-btn');
         if (target && target.dataset.room !== 'All') {
+            clearTimeout(dragTimer); // Clear any previous timer
             dragTimer = setTimeout(() => {
                 isDragging = true;
                 draggedRoom = target;
                 draggedRoom.classList.add('dragging');
-                // Prevent scrolling on the whole page while dragging
+
+                // NEW: Create a placeholder and hide the original element for touch
+                placeholder = document.createElement('div');
+                placeholder.className = 'room-filter-placeholder';
+                placeholder.style.width = draggedRoom.offsetWidth + 'px';
+                placeholder.style.height = draggedRoom.offsetHeight + 'px';
+                placeholder.style.border = '1px dashed var(--border-color)';
+                placeholder.style.borderRadius = '99px';
+                placeholder.style.marginRight = '8px'; // Match gap
+                placeholder.style.boxSizing = 'border-box';
+
+                roomsFilterBar.insertBefore(placeholder, draggedRoom);
+                draggedRoom.style.display = 'none'; // Hide original element during drag
+
                 document.body.style.overflow = 'hidden'; 
             }, DRAG_DELAY);
         }
@@ -578,27 +623,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addSafeEventListener(roomsFilterBar, 'touchmove', (e) => {
         // If we move before the timer fires, it's a scroll, not a drag.
-        clearTimeout(dragTimer); 
-        if (!isDragging || !draggedRoom) return;
+        if (!isDragging) {
+            clearTimeout(dragTimer); 
+            return;
+        }
+        if (!draggedRoom || !placeholder) return;
         
         e.preventDefault(); // This is important to prevent the screen from scrolling
         const touch = e.touches[0];
         const afterElement = getDragAfterElement(roomsFilterBar, touch.clientX);
         if (afterElement == null) {
-            roomsFilterBar.appendChild(draggedRoom);
+            roomsFilterBar.appendChild(placeholder);
         } else {
-            roomsFilterBar.insertBefore(draggedRoom, afterElement);
+            roomsFilterBar.insertBefore(placeholder, afterElement);
         }
     });
 
     addSafeEventListener(roomsFilterBar, 'touchend', () => {
         clearTimeout(dragTimer);
         if (isDragging && draggedRoom) {
+            // NEW: Restore original element and remove placeholder for touch
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(draggedRoom, placeholder);
+                placeholder.parentNode.removeChild(placeholder);
+            }
+            draggedRoom.style.display = ''; // Show original element
             draggedRoom.classList.remove('dragging');
-            draggedRoom = null;
+            
             saveRoomOrder();
         }
         isDragging = false;
+        draggedRoom = null;
+        placeholder = null;
         document.body.style.overflow = ''; // Re-enable scrolling
     });
     // --- End of Drag-and-Drop Fix ---
