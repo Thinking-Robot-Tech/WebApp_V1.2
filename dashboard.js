@@ -71,6 +71,7 @@ const roomSettingsBtn = document.getElementById('room-settings-btn');
 const editDeviceModal = document.getElementById('edit-device-modal');
 const editDeviceForm = document.getElementById('edit-device-form');
 const editDeviceNameInput = document.getElementById('edit-device-name');
+const editDeviceRoomSelect = document.getElementById('edit-device-room-select'); // NEW: Room select for edit device
 const iconSelectionGrid = document.getElementById('icon-selection-grid');
 const factoryResetBtn = document.getElementById('factory-reset-btn');
 const deleteDeviceFromAppBtn = document.getElementById('delete-device-from-app-btn');
@@ -235,6 +236,19 @@ const openEditDeviceModal = (device) => {
     editDeviceForm.dataset.deviceId = device.id;
     editDeviceNameInput.value = device.name;
 
+    // Populate room select
+    if (editDeviceRoomSelect) {
+        editDeviceRoomSelect.innerHTML = '';
+        [...userRooms, 'Unassigned'].forEach(room => {
+            const option = document.createElement('option');
+            option.value = room;
+            option.textContent = room;
+            editDeviceRoomSelect.appendChild(option);
+        });
+        // Select the current room of the device
+        editDeviceRoomSelect.value = device.room || 'Unassigned';
+    }
+
     iconSelectionGrid.innerHTML = '';
     Object.entries(deviceIcons).forEach(([id, svg]) => {
         if (id === 'default') return;
@@ -256,33 +270,39 @@ const handleUpdateDevice = async (e) => {
     e.preventDefault();
     const deviceId = e.target.dataset.deviceId;
     const newName = editDeviceNameInput.value.trim();
+    const newRoom = editDeviceRoomSelect.value; // Get selected room
     const selectedIcon = iconSelectionGrid.querySelector('.icon-option.selected');
     const newIconId = selectedIcon ? selectedIcon.dataset.iconId : 'default';
 
-    if (!deviceId || !newName) return;
+    if (!deviceId || !newName || !newRoom) return; // Ensure newRoom is also present
 
     const deviceRef = doc(db, 'devices', deviceId);
     try {
         await updateDoc(deviceRef, {
             name: newName,
+            room: newRoom, // Update the room
             iconId: newIconId
         });
         toggleModal(editDeviceModal, false);
     } catch (error) {
         console.error("Error updating device:", error);
-        alert("Failed to update device.");
+        // Use a custom modal or message box instead of alert()
+        // alert("Failed to update device."); 
+        console.log("Failed to update device."); // Log to console for now
     }
 };
 
 const handleFactoryReset = async () => {
     const deviceId = editDeviceForm.dataset.deviceId;
     if (!deviceId) return;
+    // Replace confirm with a custom modal if needed
     if (confirm(`Are you sure you want to factory reset this device? It will need to be re-configured to connect to your Wi-Fi again.`)) {
         const deviceRef = doc(db, 'devices', deviceId);
         try {
             await updateDoc(deviceRef, { factoryReset: true });
             toggleModal(editDeviceModal, false);
-            alert("Factory reset command sent. The device will disconnect and reset.");
+            // alert("Factory reset command sent. The device will disconnect and reset.");
+            console.log("Factory reset command sent. The device will disconnect and reset."); // Log to console for now
         } catch (error) {
             console.error("Error sending factory reset command:", error);
         }
@@ -291,7 +311,8 @@ const handleFactoryReset = async () => {
 
 const startQrScanner = async () => {
     if (!window.isSecureContext) {
-        alert("Camera access is only available on secure (https) pages or localhost.");
+        // alert("Camera access is only available on secure (https) pages or localhost.");
+        console.log("Camera access is only available on secure (https) pages or localhost."); // Log to console for now
         return;
     }
     const qrVideo = document.getElementById('qr-video');
@@ -304,7 +325,8 @@ const startQrScanner = async () => {
         scanFrame(); 
     } catch (err) {
         console.error("Error accessing camera: ", err);
-        alert("Could not access camera. Please ensure you've given permission.");
+        // alert("Could not access camera. Please ensure you've given permission.");
+        console.log("Could not access camera. Please ensure you've given permission."); // Log to console for now
         resetAddDeviceModal();
     }
 };
@@ -380,7 +402,8 @@ const handleStartClaimProcess = async () => {
         goToStep(3);
     } catch (error) {
         console.error("Error creating device claim:", error);
-        alert("Could not start the claim process.");
+        // alert("Could not start the claim process.");
+        console.log("Could not start the claim process."); // Log to console for now
         resetAddDeviceModal();
     }
 };
