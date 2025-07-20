@@ -1,7 +1,7 @@
 // --- Firebase SDK Imports ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, writeBatch, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // --- Firebase Configuration ---
 const firebaseConfig = {
@@ -71,7 +71,7 @@ const roomSettingsBtn = document.getElementById('room-settings-btn');
 const editDeviceModal = document.getElementById('edit-device-modal');
 const editDeviceForm = document.getElementById('edit-device-form');
 const editDeviceNameInput = document.getElementById('edit-device-name');
-const editDeviceRoomSelect = document.getElementById('edit-device-room-select'); // NEW: Room select for edit device
+const editDeviceRoomSelect = document.getElementById('edit-device-room-select'); 
 const iconSelectionGrid = document.getElementById('icon-selection-grid');
 const factoryResetBtn = document.getElementById('factory-reset-btn');
 const deleteDeviceFromAppBtn = document.getElementById('delete-device-from-app-btn');
@@ -117,7 +117,8 @@ const handleAddRoom = async (e) => {
     const newRoomName = newRoomNameInput.value.trim();
     if (newRoomName && currentUserId && !userRooms.includes(newRoomName)) {
         const userDocRef = doc(db, 'users', currentUserId);
-        await updateDoc(userDocRef, { rooms: arrayUnion(newRoomName) });
+        // Use setDoc with merge:true to ensure document exists or is created
+        await setDoc(userDocRef, { rooms: arrayUnion(newRoomName) }, { merge: true });
     }
     newRoomNameInput.value = '';
     toggleModal(addRoomModal, false);
@@ -146,7 +147,8 @@ const handleEditRoom = async (e) => {
     }
     const newRooms = userRooms.map(r => r === originalName ? newName : r);
     const userDocRef = doc(db, 'users', currentUserId);
-    await updateDoc(userDocRef, { rooms: newRooms });
+    // Use setDoc with merge:true to ensure document exists or is created
+    await setDoc(userDocRef, { rooms: newRooms }, { merge: true });
     const devicesToUpdate = allDevices.filter(d => d.room === originalName);
     if (devicesToUpdate.length > 0) {
         const batch = writeBatch(db);
@@ -164,7 +166,8 @@ const handleDeleteRoom = async () => {
     const roomToDelete = editRoomForm.dataset.originalRoomName;
     const newRooms = userRooms.filter(r => r !== roomToDelete);
     const userDocRef = doc(db, 'users', currentUserId);
-    await updateDoc(userDocRef, { rooms: newRooms });
+    // Use setDoc with merge:true to ensure document exists or is created
+    await setDoc(userDocRef, { rooms: newRooms }, { merge: true });
     const devicesToUpdate = allDevices.filter(d => d.room === roomToDelete);
     if (devicesToUpdate.length > 0) {
         const batch = writeBatch(db);
@@ -287,7 +290,6 @@ const handleUpdateDevice = async (e) => {
     } catch (error) {
         console.error("Error updating device:", error);
         // Use a custom modal or message box instead of alert()
-        // alert("Failed to update device."); 
         console.log("Failed to update device."); // Log to console for now
     }
 };
@@ -301,7 +303,6 @@ const handleFactoryReset = async () => {
         try {
             await updateDoc(deviceRef, { factoryReset: true });
             toggleModal(editDeviceModal, false);
-            // alert("Factory reset command sent. The device will disconnect and reset.");
             console.log("Factory reset command sent. The device will disconnect and reset."); // Log to console for now
         } catch (error) {
             console.error("Error sending factory reset command:", error);
@@ -311,7 +312,6 @@ const handleFactoryReset = async () => {
 
 const startQrScanner = async () => {
     if (!window.isSecureContext) {
-        // alert("Camera access is only available on secure (https) pages or localhost.");
         console.log("Camera access is only available on secure (https) pages or localhost."); // Log to console for now
         return;
     }
@@ -325,7 +325,6 @@ const startQrScanner = async () => {
         scanFrame(); 
     } catch (err) {
         console.error("Error accessing camera: ", err);
-        // alert("Could not access camera. Please ensure you've given permission.");
         console.log("Could not access camera. Please ensure you've given permission."); // Log to console for now
         resetAddDeviceModal();
     }
@@ -402,7 +401,6 @@ const handleStartClaimProcess = async () => {
         goToStep(3);
     } catch (error) {
         console.error("Error creating device claim:", error);
-        // alert("Could not start the claim process.");
         console.log("Could not start the claim process."); // Log to console for now
         resetAddDeviceModal();
     }
@@ -435,9 +433,9 @@ const setupListeners = (userId) => {
     if (unsubscribeFromDevices) unsubscribeFromDevices();
 
     const userDocRef = doc(db, "users", userId);
-    unsubscribeFromUser = onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) {
-            const userData = doc.data();
+    unsubscribeFromUser = onSnapshot(userDocRef, async (docSnapshot) => { // Made async to await setDoc
+        if (docSnapshot.exists()) {
+            const userData = docSnapshot.data();
             const { familyMembers = [], settings = {} } = userData;
             const activeMember = familyMembers.find(m => m.id === settings.activeMemberId) || familyMembers[0];
             
@@ -451,7 +449,20 @@ const setupListeners = (userId) => {
             renderRoomFilters();
             renderDevices();
         } else {
-            console.log("User document not found for ID:", userId);
+            console.log("User document not found for ID:", userId, "Creating new user document with default rooms.");
+            // Create a new user document with default rooms
+            try {
+                await setDoc(userDocRef, {
+                    email: auth.currentUser.email, // Store user's email
+                    rooms: ['Living Room', 'Hall'], // Default rooms
+                    settings: { theme: 'dark' },
+                    familyMembers: [{ id: userId, name: 'Me' }], // Default family member
+                    createdAt: serverTimestamp()
+                });
+                // After creating, the onSnapshot listener will fire again with the new document
+            } catch (error) {
+                console.error("Error creating new user document:", error);
+            }
         }
     }, (error) => console.error("Error fetching user data:", error));
 
@@ -551,7 +562,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (JSON.stringify(newOrder) !== JSON.stringify(userRooms)) {
             userRooms = newOrder;
             const userDocRef = doc(db, 'users', currentUserId);
-            await updateDoc(userDocRef, { rooms: newOrder });
+            // Use setDoc with merge:true to ensure document exists or is created
+            await setDoc(userDocRef, { rooms: newOrder }, { merge: true });
         }
     };
 
