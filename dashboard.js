@@ -30,6 +30,10 @@ let videoStream = null;
 let draggedRoom = null;
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
+// NEW: State for touch drag delay
+let dragTimer = null;
+let isDragging = false;
+const DRAG_DELAY = 500; // 500ms delay for long press
 
 // --- Device Icon Library ---
 const deviceIcons = {
@@ -237,7 +241,7 @@ const openEditDeviceModal = (device) => {
         iconOption.className = 'icon-option';
         iconOption.dataset.iconId = id;
         iconOption.innerHTML = svg;
-        if ((device.iconId || 'bulb') === id) {
+        if ((device.iconId || 'bulb') === id) { 
             iconOption.classList.add('selected');
         }
         iconSelectionGrid.appendChild(iconOption);
@@ -494,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addSafeEventListener(deleteRoomBtn, 'click', () => toggleModal(confirmRoomDeleteModal, true));
     addSafeEventListener(roomSettingsBtn, 'click', () => openEditRoomModal(activeRoomFilter));
     addSafeEventListener(roomsFilterBar, 'click', (e) => {
-        if (e.target.classList.contains('room-filter-btn')) {
+        if (e.target.classList.contains('room-filter-btn') && !isDragging) {
             activeRoomFilter = e.target.dataset.room;
             renderRoomFilters();
             renderDevices();
@@ -558,17 +562,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- MODIFIED: Touch Events with Long-Press Delay ---
     addSafeEventListener(roomsFilterBar, 'touchstart', (e) => {
         const target = e.target.closest('.room-filter-btn');
         if (target && target.dataset.room !== 'All') {
-            draggedRoom = target;
-            draggedRoom.classList.add('dragging');
+            dragTimer = setTimeout(() => {
+                isDragging = true;
+                draggedRoom = target;
+                draggedRoom.classList.add('dragging');
+                // Prevent scrolling on the whole page while dragging
+                document.body.style.overflow = 'hidden'; 
+            }, DRAG_DELAY);
         }
     });
 
     addSafeEventListener(roomsFilterBar, 'touchmove', (e) => {
-        if (!draggedRoom) return;
-        e.preventDefault();
+        // If we move before the timer fires, it's a scroll, not a drag.
+        clearTimeout(dragTimer); 
+        if (!isDragging || !draggedRoom) return;
+        
+        e.preventDefault(); // This is important to prevent the screen from scrolling
         const touch = e.touches[0];
         const afterElement = getDragAfterElement(roomsFilterBar, touch.clientX);
         if (afterElement == null) {
@@ -579,12 +592,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addSafeEventListener(roomsFilterBar, 'touchend', () => {
-        if (draggedRoom) {
+        clearTimeout(dragTimer);
+        if (isDragging && draggedRoom) {
             draggedRoom.classList.remove('dragging');
             draggedRoom = null;
             saveRoomOrder();
         }
+        isDragging = false;
+        document.body.style.overflow = ''; // Re-enable scrolling
     });
+    // --- End of Drag-and-Drop Fix ---
 
     [addDeviceModal, addRoomModal, editRoomModal, confirmDeviceDeleteModal, confirmRoomDeleteModal].forEach(modal => {
         if (modal && modal.id !== 'edit-device-modal') {
