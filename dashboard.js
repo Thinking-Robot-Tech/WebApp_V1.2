@@ -27,7 +27,7 @@ let activeRoomFilter = 'All';
 let claimProcessData = {};
 let qrScanner = null;
 let videoStream = null;
-let draggedRoom = null;
+let draggedRoom = null; // RESTORED: For drag-and-drop functionality
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
 
@@ -51,7 +51,6 @@ const roomSettingsBtn = document.getElementById('room-settings-btn');
 const applyTheme = (theme) => {
     const currentTheme = theme || 'dark';
     document.documentElement.dataset.theme = currentTheme;
-    // THIS IS THE FIX: Cache the theme in localStorage for instant loading on the next page.
     try {
         localStorage.setItem('pico-theme', currentTheme);
     } catch (e) {
@@ -390,6 +389,56 @@ document.addEventListener('DOMContentLoaded', () => {
             activeRoomFilter = e.target.dataset.room;
             renderRoomFilters();
             renderDevices();
+        }
+    });
+
+    // RESTORED: Drag-and-drop event listeners for room reordering
+    addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
+        if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
+            draggedRoom = e.target;
+            setTimeout(() => e.target.classList.add('dragging'), 0);
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'dragend', (e) => {
+        if (draggedRoom) {
+            draggedRoom.classList.remove('dragging');
+            draggedRoom = null;
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'dragover', (e) => {
+        e.preventDefault();
+        if (!draggedRoom) return;
+        const afterElement = [...roomsFilterBar.querySelectorAll('.room-filter-btn:not(.dragging):not([data-room="All"])')].reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientX - box.left - box.width / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        
+        if (afterElement == null) {
+            roomsFilterBar.appendChild(draggedRoom);
+        } else {
+            roomsFilterBar.insertBefore(draggedRoom, afterElement);
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'drop', async (e) => {
+        e.preventDefault();
+        if (!draggedRoom) return;
+        
+        const newOrder = [...roomsFilterBar.querySelectorAll('.room-filter-btn')]
+            .map(btn => btn.dataset.room)
+            .filter(room => room !== 'All');
+        
+        if (JSON.stringify(newOrder) !== JSON.stringify(userRooms)) {
+            userRooms = newOrder;
+            const userDocRef = doc(db, 'users', currentUserId);
+            await updateDoc(userDocRef, { rooms: newOrder });
         }
     });
 
