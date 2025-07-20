@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PICO IOT - Dashboard</title>
+    <!-- THIS IS THE FIX: Load theme instantly before rendering -->
+    <script src="theme-loader.js"></script>
     <link rel="stylesheet" href="dashboard.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,17 +18,16 @@
             <h1 id="welcome-message" class="app-title">My Devices</h1>
             <div class="header-actions">
                 <span id="user-email" class="user-email-display"></span>
-                <button id="logout-btn" class="logout-button">Logout</button>
+                <a href="profile/profile.html" id="profile-btn" class="profile-button" aria-label="View Profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </a>
             </div>
         </div>
     </header>
 
     <main class="main-content">
-        <!-- Room Filter Bar -->
         <div class="rooms-container">
-            <div id="rooms-filter-bar" class="rooms-filter-bar">
-                <!-- Room buttons will be dynamically inserted here -->
-            </div>
+            <div id="rooms-filter-bar" class="rooms-filter-bar"></div>
             <button id="add-room-btn" class="add-room-btn" aria-label="Add New Room">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
@@ -39,7 +40,6 @@
             </div>
         </div>
 
-        <!-- Room Actions (Edit/Delete) Button Container -->
         <div id="room-actions-container" style="display: none;">
             <button id="room-settings-btn" class="room-settings-btn" aria-label="Room Settings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
@@ -52,7 +52,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     </button>
 
-    <!-- "Add Device" Modal -->
+    <!-- Modals -->
     <div id="add-device-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
@@ -98,8 +98,6 @@
             </div>
         </div>
     </div>
-
-    <!-- "Add Room" Modal -->
     <div id="add-room-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
@@ -110,8 +108,6 @@
             </form>
         </div>
     </div>
-    
-    <!-- "Edit Room" Modal -->
     <div id="edit-room-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
@@ -126,8 +122,6 @@
             </form>
         </div>
     </div>
-
-    <!-- Confirmation Modals -->
     <div id="confirm-device-delete-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>Confirm Deletion</h2>
@@ -143,7 +137,6 @@
         </div>
     </div>
 
-    <!-- QR Code Scanner Library -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="dashboard.js" type="module"></script>
 </body>

@@ -72,11 +72,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('User signed up successfully:', user.uid);
                 const userDocRef = doc(db, "users", user.uid);
 
+                // MODIFIED: Create user document with the new, detailed structure
+                const initialMemberId = 'member_' + Date.now();
                 return setDoc(userDocRef, {
-                    name: name,
                     email: user.email,
-                    rooms: ["Living Room", "Bedroom", "Kitchen"],
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    profile: {
+                        name: name,
+                        photoURL: null
+                    },
+                    familyMembers: [
+                        { id: initialMemberId, name: name, avatar: 'default_icon' }
+                    ],
+                    settings: {
+                        theme: 'dark',
+                        activeMemberId: initialMemberId
+                    },
+                    rooms: ["Living Room", "Bedroom", "Kitchen"]
                 });
             })
             .then(() => {
@@ -99,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (rememberMe) {
-                // Set persistence to LOCAL for "Remember Me"
                 await setPersistence(auth, browserLocalPersistence);
             }
             
@@ -109,7 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Login Error:', error.code, error.message);
             
-            // If user not found, switch to signup form
             if (error.code === 'auth/user-not-found') {
                 alert('No account found with this email. Please sign up.');
                 document.getElementById('signup-email').value = email;
@@ -139,11 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Re-add the observer to handle auto-login for "Remember Me"
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // If user is logged in and on the index page, redirect to dashboard
-        if (!window.location.pathname.includes('dashboard.html') && !window.location.pathname.includes('form.html')) {
+        if (!window.location.pathname.includes('dashboard.html') && !window.location.pathname.includes('form.html') && !window.location.pathname.includes('profile.html')) {
             console.log('User is already logged in. Redirecting to dashboard...');
             window.location.href = 'dashboard.html';
         }
