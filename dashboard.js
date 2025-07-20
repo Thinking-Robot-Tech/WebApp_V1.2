@@ -419,7 +419,7 @@ const setupListeners = (userId) => {
             const activeMember = familyMembers.find(m => m.id === settings.activeMemberId) || familyMembers[0];
             
             if (welcomeMessage) {
-                welcomeMessage.textContent = activeMember ? `Welcome, ${activeMember.name}` : 'Welcome';
+                welcomeMessage.textContent = activeMember ? `Hey, ${activeMember.name}` : 'Welcome';
             }
             
             userRooms = userData.rooms || [];
