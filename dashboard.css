@@ -135,3 +135,11 @@ input:checked + .slider:before { transform: translateX(22px); }
     .fab { bottom: 30px; right: 30px; }
     #claim-code-display { font-size: 24px; }
 }
+
+.claim-code-container { display: flex; justify-content: space-between; align-items: center; background-color: var(--background-dark); border: 1px dashed var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+#claim-code-display { font-family: 'monospace'; font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: 2px; }
+.copy-button { background-color: var(--border-color); color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.waiting-text { font-size: 14px; color: var(--text-secondary); text-align: center; }
+.virtual-device-link-container { text-align: center; margin-top: 24px; }
+.virtual-device-link { color: var(--text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: color 0.2s ease; }
+.virtual-device-link:hover { color: var(--primary-color); text-decoration: underline; }
