@@ -27,7 +27,7 @@ let activeRoomFilter = 'All';
 let claimProcessData = {};
 let qrScanner = null;
 let videoStream = null;
-let draggedRoom = null; // RESTORED: For drag-and-drop functionality
+let draggedRoom = null;
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
 
@@ -391,46 +391,22 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDevices();
         }
     });
-
-    // RESTORED: Drag-and-drop event listeners for room reordering
-    addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
-        if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
-            draggedRoom = e.target;
-            setTimeout(() => e.target.classList.add('dragging'), 0);
-        }
-    });
-
-    addSafeEventListener(roomsFilterBar, 'dragend', (e) => {
-        if (draggedRoom) {
-            draggedRoom.classList.remove('dragging');
-            draggedRoom = null;
-        }
-    });
-
-    addSafeEventListener(roomsFilterBar, 'dragover', (e) => {
-        e.preventDefault();
-        if (!draggedRoom) return;
-        const afterElement = [...roomsFilterBar.querySelectorAll('.room-filter-btn:not(.dragging):not([data-room="All"])')].reduce((closest, child) => {
+    
+    // --- THIS IS THE FIX: Added Touch Events for Mobile Drag-and-Drop ---
+    const getDragAfterElement = (container, x) => {
+        const draggableElements = [...container.querySelectorAll('.room-filter-btn:not(.dragging):not([data-room="All"])')];
+        return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
-            const offset = e.clientX - box.left - box.width / 2;
+            const offset = x - box.left - box.width / 2;
             if (offset < 0 && offset > closest.offset) {
                 return { offset: offset, element: child };
             } else {
                 return closest;
             }
         }, { offset: Number.NEGATIVE_INFINITY }).element;
-        
-        if (afterElement == null) {
-            roomsFilterBar.appendChild(draggedRoom);
-        } else {
-            roomsFilterBar.insertBefore(draggedRoom, afterElement);
-        }
-    });
+    };
 
-    addSafeEventListener(roomsFilterBar, 'drop', async (e) => {
-        e.preventDefault();
-        if (!draggedRoom) return;
-        
+    const saveRoomOrder = async () => {
         const newOrder = [...roomsFilterBar.querySelectorAll('.room-filter-btn')]
             .map(btn => btn.dataset.room)
             .filter(room => room !== 'All');
@@ -440,7 +416,70 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocRef = doc(db, 'users', currentUserId);
             await updateDoc(userDocRef, { rooms: newOrder });
         }
+    };
+
+    // Mouse Events (for Desktop)
+    addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
+        if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
+            draggedRoom = e.target;
+            setTimeout(() => e.target.classList.add('dragging'), 0);
+        }
     });
+
+    addSafeEventListener(roomsFilterBar, 'dragend', () => {
+        if (draggedRoom) {
+            draggedRoom.classList.remove('dragging');
+            draggedRoom = null;
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'dragover', (e) => {
+        e.preventDefault();
+        if (!draggedRoom) return;
+        const afterElement = getDragAfterElement(roomsFilterBar, e.clientX);
+        if (afterElement == null) {
+            roomsFilterBar.appendChild(draggedRoom);
+        } else {
+            roomsFilterBar.insertBefore(draggedRoom, afterElement);
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'drop', (e) => {
+        e.preventDefault();
+        if (draggedRoom) {
+            saveRoomOrder();
+        }
+    });
+
+    // Touch Events (for Mobile)
+    addSafeEventListener(roomsFilterBar, 'touchstart', (e) => {
+        const target = e.target.closest('.room-filter-btn');
+        if (target && target.dataset.room !== 'All') {
+            draggedRoom = target;
+            draggedRoom.classList.add('dragging');
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'touchmove', (e) => {
+        if (!draggedRoom) return;
+        e.preventDefault(); // Prevent scrolling while dragging
+        const touch = e.touches[0];
+        const afterElement = getDragAfterElement(roomsFilterBar, touch.clientX);
+        if (afterElement == null) {
+            roomsFilterBar.appendChild(draggedRoom);
+        } else {
+            roomsFilterBar.insertBefore(draggedRoom, afterElement);
+        }
+    });
+
+    addSafeEventListener(roomsFilterBar, 'touchend', () => {
+        if (draggedRoom) {
+            draggedRoom.classList.remove('dragging');
+            draggedRoom = null;
+            saveRoomOrder();
+        }
+    });
+    // --- End of Drag-and-Drop Fix ---
 
     [addDeviceModal, addRoomModal, editRoomModal, confirmDeviceDeleteModal, confirmRoomDeleteModal].forEach(modal => {
         if (modal) {
