@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PICO IOT - Profile & Settings</title>
-    <!-- THIS IS THE FIX: Load theme instantly before rendering -->
     <script src="../theme-loader.js"></script>
     <link rel="stylesheet" href="profile.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,7 +41,8 @@
         <div class="settings-section">
             <h3 class="section-title">My Profile</h3>
             <div class="settings-list">
-                <a href="#" class="list-item">
+                <!-- MODIFIED: Added id to open the family modal -->
+                <a href="#" id="family-members-btn" class="list-item">
                     <span>Family Members</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
@@ -52,34 +52,13 @@
         <div class="settings-section">
             <h3 class="section-title">Appearance</h3>
             <div id="theme-selector" class="theme-selector-container">
-                <button class="theme-btn" data-theme="dark">
-                    <div class="theme-preview theme-dark"></div>
-                    <span>Dark</span>
-                </button>
-                <button class="theme-btn" data-theme="light">
-                    <div class="theme-preview theme-light"></div>
-                    <span>Light</span>
-                </button>
-                <button class="theme-btn" data-theme="twilight">
-                    <div class="theme-preview theme-twilight"></div>
-                    <span>Twilight</span>
-                </button>
-                <button class="theme-btn" data-theme="ocean">
-                    <div class="theme-preview theme-ocean"></div>
-                    <span>Ocean</span>
-                </button>
-                <button class="theme-btn" data-theme="forest">
-                    <div class="theme-preview theme-forest"></div>
-                    <span>Forest</span>
-                </button>
-                <button class="theme-btn" data-theme="sunrise">
-                    <div class="theme-preview theme-sunrise"></div>
-                    <span>Sunrise</span>
-                </button>
-                 <button class="theme-btn" data-theme="matrix">
-                    <div class="theme-preview theme-matrix"></div>
-                    <span>Matrix</span>
-                </button>
+                <button class="theme-btn" data-theme="dark"><div class="theme-preview theme-dark"></div><span>Dark</span></button>
+                <button class="theme-btn" data-theme="light"><div class="theme-preview theme-light"></div><span>Light</span></button>
+                <button class="theme-btn" data-theme="twilight"><div class="theme-preview theme-twilight"></div><span>Twilight</span></button>
+                <button class="theme-btn" data-theme="ocean"><div class="theme-preview theme-ocean"></div><span>Ocean</span></button>
+                <button class="theme-btn" data-theme="forest"><div class="theme-preview theme-forest"></div><span>Forest</span></button>
+                <button class="theme-btn" data-theme="sunrise"><div class="theme-preview theme-sunrise"></div><span>Sunrise</span></button>
+                <button class="theme-btn" data-theme="matrix"><div class="theme-preview theme-matrix"></div><span>Matrix</span></button>
             </div>
         </div>
 
@@ -96,6 +75,7 @@
         </div>
     </main>
     
+    <!-- Edit Name Modal -->
     <div id="edit-name-modal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" aria-label="Close">&times;</button>
@@ -107,7 +87,24 @@
         </div>
     </div>
 
-    <!-- THIS WAS THE ERROR: The path was "../profile.js". It is now corrected to "profile.js" -->
+    <!-- NEW: Family Members Modal -->
+    <div id="family-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" aria-label="Close">&times;</button>
+            <h2>Family Members</h2>
+            <p>Select who is using the app. Add or remove members who share this home.</p>
+            
+            <div id="family-list" class="family-list">
+                <!-- Family members will be dynamically inserted here -->
+            </div>
+
+            <form id="add-member-form" class="add-member-form">
+                <input type="text" id="new-member-name" placeholder="New member's name" required>
+                <button type="submit" class="add-member-btn">Add</button>
+            </form>
+        </div>
+    </div>
+
     <script src="profile.js" type="module"></script>
 </body>
 </html>

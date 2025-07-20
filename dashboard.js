@@ -323,8 +323,14 @@ const setupListeners = (userId) => {
     unsubscribeFromUser = onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) {
             const userData = doc.data();
-            const profileName = userData.profile?.name || userData.name || 'User';
-            if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${profileName}`;
+            // MODIFIED: Welcome the active family member
+            const { familyMembers = [], settings = {} } = userData;
+            const activeMember = familyMembers.find(m => m.id === settings.activeMemberId) || familyMembers[0];
+            
+            if (welcomeMessage) {
+                welcomeMessage.textContent = activeMember ? `Welcome, ${activeMember.name}` : 'Welcome';
+            }
+            
             userRooms = userData.rooms || [];
             const savedTheme = userData.settings?.theme || 'dark';
             applyTheme(savedTheme);
@@ -392,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // --- THIS IS THE FIX: Added Touch Events for Mobile Drag-and-Drop ---
     const getDragAfterElement = (container, x) => {
         const draggableElements = [...container.querySelectorAll('.room-filter-btn:not(.dragging):not([data-room="All"])')];
         return draggableElements.reduce((closest, child) => {
@@ -418,7 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Mouse Events (for Desktop)
     addSafeEventListener(roomsFilterBar, 'dragstart', (e) => {
         if (e.target.classList.contains('room-filter-btn') && e.target.dataset.room !== 'All') {
             draggedRoom = e.target;
@@ -451,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Touch Events (for Mobile)
     addSafeEventListener(roomsFilterBar, 'touchstart', (e) => {
         const target = e.target.closest('.room-filter-btn');
         if (target && target.dataset.room !== 'All') {
@@ -462,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addSafeEventListener(roomsFilterBar, 'touchmove', (e) => {
         if (!draggedRoom) return;
-        e.preventDefault(); // Prevent scrolling while dragging
+        e.preventDefault();
         const touch = e.touches[0];
         const afterElement = getDragAfterElement(roomsFilterBar, touch.clientX);
         if (afterElement == null) {
@@ -479,7 +482,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveRoomOrder();
         }
     });
-    // --- End of Drag-and-Drop Fix ---
 
     [addDeviceModal, addRoomModal, editRoomModal, confirmDeviceDeleteModal, confirmRoomDeleteModal].forEach(modal => {
         if (modal) {
