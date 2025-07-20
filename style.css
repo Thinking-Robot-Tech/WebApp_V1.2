@@ -198,3 +198,21 @@ input:focus {
     color: var(--text-light);
     font-size: 12px;
 }
+
+/* Remember Me Checkbox */
+.remember-me-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.remember-me-container input {
+    width: auto;
+    margin-right: 8px;
+}
+
+.remember-me-container label {
+    font-size: 14px;
+    color: var(--text-light);
+}

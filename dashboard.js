@@ -78,6 +78,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const handleAddRoom = async (e) => {
+        e.preventDefault();
+        const newRoomNameInput = document.getElementById('new-room-name');
+        const newRoomName = newRoomNameInput.value.trim();
+        if (newRoomName && currentUserId && !userRooms.includes(newRoomName)) {
+            const userDocRef = doc(db, 'users', currentUserId);
+            await setDoc(userDocRef, {
+                rooms: arrayUnion(newRoomName)
+            }, { merge: true });
+        }
+        newRoomNameInput.value = '';
+        if(addRoomModal) toggleModal(addRoomModal, false);
+    };
+
     const openEditRoomModal = (roomName) => {
         if (!editRoomModal) return;
         const roomNameInput = document.getElementById('edit-room-name');

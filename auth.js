@@ -3,7 +3,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    setPersistence,
+    browserLocalPersistence,
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -50,11 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /**
-     * Handles user signup. Creates an auth user and a corresponding
-     * document in the 'users' collection in Firestore.
-     * @param {Event} e The form submission event.
-     */
     const handleSignup = (e) => {
         e.preventDefault();
         const name = document.getElementById('signup-name').value.trim();
@@ -74,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('User signed up successfully:', user.uid);
                 const userDocRef = doc(db, "users", user.uid);
 
-                // **FIX**: Use a .then() chain to ensure setDoc completes before redirect.
                 return setDoc(userDocRef, {
                     name: name,
                     email: user.email,
@@ -93,22 +90,36 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         toggleButtonLoading(loginFormEl, true);
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+        const rememberMe = document.getElementById('remember-me').checked;
 
-        signInWithEmailAndPassword(auth, email, password)
-            .then(() => {
-                console.log('User logged in successfully');
-                window.location.href = 'dashboard.html';
-            })
-            .catch((error) => {
-                console.error('Login Error:', error);
+        try {
+            if (rememberMe) {
+                // Set persistence to LOCAL for "Remember Me"
+                await setPersistence(auth, browserLocalPersistence);
+            }
+            
+            await signInWithEmailAndPassword(auth, email, password);
+            console.log('User logged in successfully');
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            console.error('Login Error:', error.code, error.message);
+            
+            // If user not found, switch to signup form
+            if (error.code === 'auth/user-not-found') {
+                alert('No account found with this email. Please sign up.');
+                document.getElementById('signup-email').value = email;
+                loginDiv.style.display = 'none';
+                signupDiv.style.display = 'block';
+            } else {
                 alert(`Error logging in: ${error.message}`);
-                toggleButtonLoading(loginFormEl, false);
-            });
+            }
+            toggleButtonLoading(loginFormEl, false);
+        }
     };
 
     // --- Event Listeners ---
@@ -128,4 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// The onAuthStateChanged listener has been removed from this file to prevent premature redirection.
+// Re-add the observer to handle auto-login for "Remember Me"
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // If user is logged in and on the index page, redirect to dashboard
+        if (!window.location.pathname.includes('dashboard.html') && !window.location.pathname.includes('form.html')) {
+            console.log('User is already logged in. Redirecting to dashboard...');
+            window.location.href = 'dashboard.html';
+        }
+    }
+});
