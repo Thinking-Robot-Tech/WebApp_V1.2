@@ -31,6 +31,25 @@ let draggedRoom = null;
 let unsubscribeFromDevices = null;
 let unsubscribeFromUser = null;
 
+// --- Device Icon Library ---
+const deviceIcons = {
+    'default': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    'bulb': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
+    'socket': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-2.2-1.8-4-4-4H9.5A2.5 2.5 0 0 0 7 6.5v11A2.5 2.5 0 0 0 9.5 20H14a4 4 0 0 0 4-4Z"/><path d="M8 12h3"/><path d="M15 12h.01"/></svg>`,
+    'fan': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z"/><path d="M12 12v8"/><path d="m16 16-3-3"/><path d="m8 16 3-3"/></svg>`,
+    'tv': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>`,
+    'ac': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-6 6v6a6 6 0 0 0 12 0v-6a6 6 0 0 0-6-6z"/><path d="m9 12 2 2 2-2"/><path d="M9 9h6"/></svg>`,
+    'geyser': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a3 3 0 0 0-3 3v7.5a2.5 2.5 0 0 0 5 0V12a3 3 0 0 0-3-3z"/><path d="M12 9V3m-3 3 3-3 3 3"/></svg>`,
+    'lamp': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-4.1 4.1c-.6.6-1.5.6-2.1 0l-1-1c-.6-.6-.6-1.5 0-2.1L11 9"/><path d="m18 13 2.1-2.1c.6-.6.6-1.5 0-2.1l-1-1c-.6-.6-1.5-.6-2.1 0L13 11"/><path d="M14 9.5 11 13"/><path d="M13 18h5"/><path d="M4 22h16"/></svg>`,
+    'power': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+    'cctv': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2a4 4 0 0 0-4 4v2h8V6a4 4 0 0 0-4-4z"/><path d="M12 16a4 4 0 0 0-4 4v2h8v-2a4 4 0 0 0-4-4z"/></svg>`,
+    'speaker': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><circle cx="12" cy="14" r="4"/><line x1="12" y1="6" x2="12.01" y2="6"/></svg>`,
+    'wifi': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a8 8 0 0 1 14 0"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M8 16.29a4 4 0 0 1 8 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
+    'fridge': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM5 10h14M8 6v2"/></svg>`,
+    'bed': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16h20V4H2z"/><path d="M2 9h20"/><path d="M10 12v5"/><path d="M14 12v5"/></svg>`,
+    'kitchen': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>`,
+};
+
 // --- DOM Element References ---
 const welcomeMessage = document.getElementById('welcome-message');
 const deviceListContainer = document.getElementById('device-list-container');
@@ -45,6 +64,12 @@ const addRoomForm = document.getElementById('add-room-form');
 const editRoomForm = document.getElementById('edit-room-form');
 const deleteRoomBtn = document.getElementById('delete-room-btn');
 const roomSettingsBtn = document.getElementById('room-settings-btn');
+const editDeviceModal = document.getElementById('edit-device-modal');
+const editDeviceForm = document.getElementById('edit-device-form');
+const editDeviceNameInput = document.getElementById('edit-device-name');
+const iconSelectionGrid = document.getElementById('icon-selection-grid');
+const factoryResetBtn = document.getElementById('factory-reset-btn');
+const deleteDeviceFromAppBtn = document.getElementById('delete-device-from-app-btn');
 
 // --- Functions ---
 
@@ -166,7 +191,7 @@ const renderDevices = () => {
             const isOn = device.state?.isOn ?? false;
             card.innerHTML = `
                 <div class="card-top">
-                    <div class="card-icon">${getDeviceIcon(device.type)}</div>
+                    <div class="card-icon">${getDeviceIcon(device)}</div>
                     <div class="card-status ${isOnline ? 'online' : 'offline'}">${isOnline ? 'Online' : 'Offline'}</div>
                 </div>
                 <div class="card-main">
@@ -174,11 +199,11 @@ const renderDevices = () => {
                     <p class="card-type">${device.room || 'Unassigned'} - ${device.type || 'PICO Device'}</p>
                 </div>
                 <div class="card-bottom">
-                    <button class="delete-btn" aria-label="Delete Device"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    <button class="edit-btn" aria-label="Edit Device"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
                     <label class="switch"><input type="checkbox" class="device-toggle" ${isOn ? 'checked' : ''} ${!isOnline ? 'disabled' : ''}><span class="slider round"></span></label>
                 </div>`;
             card.querySelector('.device-toggle').addEventListener('change', () => handleToggleDevice(device.id, isOn));
-            card.querySelector('.delete-btn').addEventListener('click', () => openDeleteConfirmation(device.id, device.name, 'device'));
+            card.querySelector('.edit-btn').addEventListener('click', () => openEditDeviceModal(device));
             grid.appendChild(card);
         });
     }
@@ -187,12 +212,74 @@ const renderDevices = () => {
     }
 };
 
-const getDeviceIcon = (type) => {
-    switch (type) {
-        case 'PICO-SOCT': return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0-2.2-1.8-4-4-4H9.5A2.5 2.5 0 0 0 7 6.5v11A2.5 2.5 0 0 0 9.5 20H14a4 4 0 0 0 4-4Z"/><path d="M8 12h3"/><path d="M15 12h.01"/></svg>`;
-        case 'PICO-BLB1': return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`;
-        case 'PICO-VRT1': return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M12 14a2 2 0 0 1-2-2 2 2 0 0 1 2-2"/><path d="M12 14a6 6 0 0 0-6 6 4 4 0 0 0 4 4 6 6 0 0 0 6-6 4 4 0 0 0 4 4 6 6 0 0 0 6-6 4 4 0 0 0-4-4"/></svg>`;
-        default: return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`;
+const getDeviceIcon = (device) => {
+    if (device.iconId && deviceIcons[device.iconId]) {
+        return deviceIcons[device.iconId];
+    }
+    switch (device.type) {
+        case 'PICO-SOCT': return deviceIcons['socket'];
+        case 'PICO-BLB1': return deviceIcons['bulb'];
+        default: return deviceIcons['default'];
+    }
+};
+
+const openEditDeviceModal = (device) => {
+    if (!editDeviceModal) return;
+    
+    editDeviceForm.dataset.deviceId = device.id;
+    editDeviceNameInput.value = device.name;
+
+    iconSelectionGrid.innerHTML = '';
+    Object.entries(deviceIcons).forEach(([id, svg]) => {
+        if (id === 'default') return;
+        const iconOption = document.createElement('button');
+        iconOption.type = 'button';
+        iconOption.className = 'icon-option';
+        iconOption.dataset.iconId = id;
+        iconOption.innerHTML = svg;
+        if ((device.iconId || 'bulb') === id) {
+            iconOption.classList.add('selected');
+        }
+        iconSelectionGrid.appendChild(iconOption);
+    });
+    
+    toggleModal(editDeviceModal, true);
+};
+
+const handleUpdateDevice = async (e) => {
+    e.preventDefault();
+    const deviceId = e.target.dataset.deviceId;
+    const newName = editDeviceNameInput.value.trim();
+    const selectedIcon = iconSelectionGrid.querySelector('.icon-option.selected');
+    const newIconId = selectedIcon ? selectedIcon.dataset.iconId : 'default';
+
+    if (!deviceId || !newName) return;
+
+    const deviceRef = doc(db, 'devices', deviceId);
+    try {
+        await updateDoc(deviceRef, {
+            name: newName,
+            iconId: newIconId
+        });
+        toggleModal(editDeviceModal, false);
+    } catch (error) {
+        console.error("Error updating device:", error);
+        alert("Failed to update device.");
+    }
+};
+
+const handleFactoryReset = async () => {
+    const deviceId = editDeviceForm.dataset.deviceId;
+    if (!deviceId) return;
+    if (confirm(`Are you sure you want to factory reset this device? It will need to be re-configured to connect to your Wi-Fi again.`)) {
+        const deviceRef = doc(db, 'devices', deviceId);
+        try {
+            await updateDoc(deviceRef, { factoryReset: true });
+            toggleModal(editDeviceModal, false);
+            alert("Factory reset command sent. The device will disconnect and reset.");
+        } catch (error) {
+            console.error("Error sending factory reset command:", error);
+        }
     }
 };
 
@@ -314,7 +401,6 @@ const handleDeleteDevice = async (e) => {
     toggleModal(document.getElementById('confirm-device-delete-modal'), false);
 };
 
-// --- Auth & Data Fetching ---
 const setupListeners = (userId) => {
     if (unsubscribeFromUser) unsubscribeFromUser();
     if (unsubscribeFromDevices) unsubscribeFromDevices();
@@ -323,7 +409,6 @@ const setupListeners = (userId) => {
     unsubscribeFromUser = onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) {
             const userData = doc.data();
-            // MODIFIED: Welcome the active family member
             const { familyMembers = [], settings = {} } = userData;
             const activeMember = familyMembers.find(m => m.id === settings.activeMemberId) || familyMembers[0];
             
@@ -370,7 +455,6 @@ const resetAddDeviceModal = () => {
     if(deviceDetailsForm) deviceDetailsForm.reset();
 };
 
-// --- Main Entry Point ---
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -384,6 +468,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    addSafeEventListener(editDeviceForm, 'submit', handleUpdateDevice);
+    addSafeEventListener(factoryResetBtn, 'click', handleFactoryReset);
+    addSafeEventListener(deleteDeviceFromAppBtn, 'click', () => {
+        const deviceId = editDeviceForm.dataset.deviceId;
+        const device = allDevices.find(d => d.id === deviceId);
+        if (device) {
+            toggleModal(editDeviceModal, false);
+            openDeleteConfirmation(deviceId, device.name, 'device');
+        }
+    });
+    addSafeEventListener(iconSelectionGrid, 'click', (e) => {
+        const target = e.target.closest('.icon-option');
+        if (target) {
+            iconSelectionGrid.querySelector('.selected')?.classList.remove('selected');
+            target.classList.add('selected');
+        }
+    });
+    addSafeEventListener(editDeviceModal.querySelector('.close-modal-btn'), 'click', () => toggleModal(editDeviceModal, false));
+    
     addSafeEventListener(document.getElementById('add-device-fab'), 'click', () => { resetAddDeviceModal(); toggleModal(addDeviceModal, true); });
     addSafeEventListener(document.getElementById('add-room-btn'), 'click', () => toggleModal(addRoomModal, true));
     addSafeEventListener(addRoomForm, 'submit', handleAddRoom);
@@ -484,10 +587,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     [addDeviceModal, addRoomModal, editRoomModal, confirmDeviceDeleteModal, confirmRoomDeleteModal].forEach(modal => {
-        if (modal) {
+        if (modal && modal.id !== 'edit-device-modal') {
             addSafeEventListener(modal.querySelector('.close-modal-btn'), 'click', () => toggleModal(modal, false));
-            modal.querySelectorAll('.cancel-btn')?.forEach(btn => addSafeEventListener(btn, 'click', () => toggleModal(modal, false)));
         }
+        modal.querySelectorAll('.cancel-btn')?.forEach(btn => addSafeEventListener(btn, 'click', () => toggleModal(modal, false)));
     });
     addSafeEventListener(confirmDeviceDeleteModal?.querySelector('.confirm-btn'), 'click', handleDeleteDevice);
     addSafeEventListener(confirmRoomDeleteModal?.querySelector('.confirm-btn'), 'click', handleDeleteRoom);
