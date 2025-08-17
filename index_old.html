@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PICO IOT - Welcome</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡️</text></svg>">
+</head>
+<body>
+    <div class="background-shapes"></div>
+    
+    <!-- NEW: Loading overlay shown by default -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- MODIFIED: Auth container is hidden by default -->
+    <div id="auth-wrapper" class="auth-container" style="display: none;">
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <svg class="logo" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <h1>PICO IOT</h1>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2>Welcome Back</h2>
+                <form id="login">
+                    <div class="input-group">
+                        <input type="email" id="login-email" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <div class="remember-me-container">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">Remember Me</label>
+                    </div>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Login</span>
+                        <div class="spinner" style="display: none;"></div>
+                    </button>
+                </form>
+                <p class="toggle-text">Need an account? <span id="show-signup" class="toggle-link">Sign Up</span></p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signup-form" style="display: none;">
+                <h2>Create Account</h2>
+                <form id="signup">
+                     <div class="input-group">
+                        <input type="text" id="signup-name" placeholder="Your Name" required>
+                    </div>
+                     <div class="input-group">
+                        <input type="email" id="signup-email" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="signup-password" placeholder="Password (min. 6 characters)" required>
+                    </div>
+                    <button type="submit" class="auth-button">
+                        <span class="button-text">Create Account</span>
+                        <div class="spinner" style="display: none;"></div>
+                    </button>
+                </form>
+                <p class="toggle-text">Already have an account? <span id="show-login" class="toggle-link">Login</span></p>
+            </div>
+        </div>
+        <footer class="auth-footer">
+            <p>&copy; 2024 PICO IOT. All Rights Reserved.</p>
+        </footer>
+    </div>
+    <script src="auth.js" type="module"></script>
+</body>
+</html>
