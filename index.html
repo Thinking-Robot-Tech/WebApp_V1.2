@@ -21,13 +21,23 @@
             transition: background-color 0.3s ease-in-out;
         }
         .device-card {
-            transition: box-shadow 0.3s ease; /* Removed transform transition */
             background-color: #1f2937; /* Slightly lighter card background */
         }
-        /* Removed the :hover pseudo-class that caused the animation */
+        /* Style for the clock to ensure it's readable and unobtrusive */
+        #clock-container {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
+
+    <!-- Clock Element -->
+    <div id="clock-container" class="fixed top-4 right-4 bg-gray-900 bg-opacity-70 text-white p-2 rounded-lg shadow-lg flex items-center space-x-3 text-sm font-mono z-50">
+        <span id="clock-time" class="tracking-wider">00:00:00</span>
+        <button id="toggle-ms-btn" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-0.5 rounded-md transition-colors">Show ms</button>
+    </div>
+
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
         <header class="text-center mb-8">
@@ -37,7 +47,7 @@
 
         <main id="devices-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Loading state -->
-            <div id="loading-state" class="md:col-span-2 text-center text-gray-400 bg-gray-800 rounded-xl shadow-md p-8">
+            <div id="loading-state" class="md-col-span-2 text-center text-gray-400 bg-gray-800 rounded-xl shadow-md p-8">
                 <svg class="animate-spin h-8 w-8 text-indigo-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -57,6 +67,37 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
+        // --- Clock Logic ---
+        const clockTimeEl = document.getElementById('clock-time');
+        const toggleMsBtn = document.getElementById('toggle-ms-btn');
+        let showMilliseconds = false;
+
+        toggleMsBtn.addEventListener('click', () => {
+            showMilliseconds = !showMilliseconds;
+            toggleMsBtn.textContent = showMilliseconds ? 'Hide ms' : 'Show ms';
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            let timeString = `${hours}:${minutes}:${seconds}`;
+
+            if (showMilliseconds) {
+                const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+                timeString += `.<span class="text-indigo-300">${milliseconds}</span>`;
+                clockTimeEl.innerHTML = timeString; // Use innerHTML to render the styled span
+            } else {
+                 clockTimeEl.textContent = timeString;
+            }
+        }
+
+        // Update the clock frequently for smooth milliseconds display
+        setInterval(updateClock, 50);
+
+
         // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyBxwM04W_3vHbXbNb7cvEXWUi3udRVXFXk",
